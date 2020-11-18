@@ -1,0 +1,16 @@
+name: VanillaTowns
+version: 1.0.0
+main: it.multicoredev.vt.VanillaTowns
+api-version: 1.16
+author: LoreScheffer
+description: VanillaTowns
+depend: [Vault]
+softdepend: [MCCore]
+
+commands:
+  vanillatowns:
+    aliases: [vt]
+    description: Main plugin command
+  town:
+    aliases: [towns]
+    description: Town command
