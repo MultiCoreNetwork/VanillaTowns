@@ -23,6 +23,7 @@ messages:
   not-in-town: "&cYou are not in a town!"
   not-leader: "&cYou must be the leader of the town to perform this command!"
   not-admin: "&cYou must be at least an admin to perform this command!"
+  give-first: "&cYou are the leader of the town. Give the leader to someone else before leaving."
   player-invited: "&bYou invited &e{player} &bto your town."
   invite-received: "&bYou have been invited to &e{town} &bby &e{player}&b!\n&bType &e/town join <town> &bto accept the invite."
   no-invites: "&cYou don't have any invite!"
@@ -32,6 +33,8 @@ messages:
   not-in-your-town: "&cThis player is not in this town!"
   player-kicked: "&bYou kicked &e{player} from your town!"
   you-have-been-kicked: "&bYou have been kicked from &e{town}!"
+  player-left: "&e{player} &bleft your town!"
+  you-left: "&bYou left the town &e{town}&b!"
   tonw-give-failed: "&cTown give failed!"
   leader-transferred: "&bYou transferred the town leader role to &e{player}&b!"
   you-are-leader: "&bYou are now the leader of your town!"
@@ -57,6 +60,17 @@ messages:
   player-cannot-deposit: "&e{player} &bcan't deposit anymore to bank town!"
   player-can-withdraw: "&e{player} &bcan now withdraw money from bank town!"
   player-cannot-withdraw: "&e{player} &bcan't withdraw anymore from bank town!"
+  baltop-head: "&7&m------&e Towns &7&m------"
+  baltop: "&e{position}. &b&l{town} &r- &e{balance}"
+  baltop-footer: "&7&m------&e Towns &7&m------"
+
+placeholders:
+  none: "None"
+  leader: "Leader"
+  admin: "Admin"
+  member: "Member"
+
+town-chat: "&dTOWN: &6{player} &e>&r {message}"
 
 town:
   - "&7&m----&r &e&l{town}&r &7&m----"
@@ -67,11 +81,13 @@ town:
 
 help:
   - "&7&m----&r &e&lTown Command&r &7&m----"
+  - "&b/town baltop &f- &eshow the top 10 towns"
   - "&b/town create <name> &f- &eCreate a new town"
   - "&b/town delete &f- &eDelete your town"
   - "&b/town invite <player> &f- &eInvite a player to your town"
   - "&b/town join <name> &f- &eJoin a town if invited"
   - "&b/town kick <player> &f- &eKick a player from your town"
+  - "&b/town leave &f- &eLeave your town"
   - "&b/town give <player> &f- &eTransfer the leader role to someone else"
   - "&b/town home &f- &eTeleport to the town home"
   - "&b/town sethome &f- &eSet the town home"
@@ -86,4 +102,5 @@ help:
   - "&b/town user deposit <player> deny &f- &eRevoke the permission to deposit money"
   - "&b/town user withdraw <player> allow &f- &eGrant the permission to withdraw money"
   - "&b/town user withdraw <player> deny &f- &eRevoke the permission to withdraw money"
+  - "&b/townchat <message> &f- &eSend a message to all members of your town"
   - "&7&m----&r &e&lTown Command&r &7&m----"

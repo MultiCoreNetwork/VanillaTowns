@@ -3,6 +3,7 @@ package it.multicoredev.vt.storage;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,5 +70,11 @@ public class Towns {
         }
 
         return false;
+    }
+
+    public List<Town> getTowns() {
+        List<Town> t = new ArrayList<>(towns);
+        Collections.sort(t);
+        return t;
     }
 }

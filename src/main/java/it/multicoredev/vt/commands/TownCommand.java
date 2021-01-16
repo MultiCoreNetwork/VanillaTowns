@@ -1,6 +1,7 @@
 package it.multicoredev.vt.commands;
 
 import it.multicoredev.mbcore.spigot.Chat;
+import it.multicoredev.mbcore.spigot.util.TabCompleterUtil;
 import it.multicoredev.mclib.yaml.Configuration;
 import it.multicoredev.vt.Utils;
 import it.multicoredev.vt.VanillaTowns;
@@ -73,6 +74,9 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             case "help":
                 help(player);
                 break;
+            case "baltop":
+                baltop(player);
+                break;
             case "create":
                 create(player, args);
                 break;
@@ -87,6 +91,9 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                 break;
             case "kick":
                 kick(player, args);
+                break;
+            case "leave":
+                leave(player);
                 break;
             case "give":
                 give(player, args);
@@ -157,7 +164,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         if (admins.size() > 0) {
             for (int i = 0; i < admins.size(); i++) {
-                adminsName.append(admins.get(i));
+                adminsName.append(admins.get(i).getName());
                 if (i < admins.size() - 1) adminsName.append(", ");
             }
         } else {
@@ -166,7 +173,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         if (members.size() > 0) {
             for (int i = 0; i < members.size(); i++) {
-                membersName.append(members.get(i));
+                membersName.append(members.get(i).getName());
                 if (i < members.size() - 1) membersName.append(", ");
             }
         } else {
@@ -188,6 +195,28 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         }
     }
 
+    private void baltop(Player player) {
+        List<Town> list = this.towns.getTowns();
+        Town playerTown = this.towns.getTown(player);
+        boolean isInTop = false;
+
+        Chat.send(getString("baltop-head"), player);
+        for (int i = 0; i < 10; i++) {
+            Town town = list.get(i);
+            if (playerTown != null && playerTown.equals(town)) isInTop = true;
+
+            Chat.send(getString("baltop")
+                    .replace("{position}", String.valueOf(i + 1))
+                    .replace("{town}", town.getName())
+                    .replace("{balance}", String.valueOf(Utils.formatNumber(town.getBalance()))), player);
+        }
+        if (playerTown != null && !isInTop) Chat.send(getString("baltop")
+                .replace("{position}", String.valueOf(list.indexOf(playerTown) + 1))
+                .replace("{town}", playerTown.getName())
+                .replace("{balance}", String.valueOf(Utils.formatNumber(playerTown.getBalance()))), player);
+        Chat.send(getString("baltop-footer"), player);
+    }
+
     private void create(Player player, String[] args) {
         if (args.length < 2) {
             Chat.send(incorrectUsage("/town create <name>"), player);
@@ -199,7 +228,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             return;
         }
 
-        String name = args[1];
+        String name = Chat.getDiscolored(args[1]);
         if (towns.townExists(name)) {
             Chat.send(getString("name-not-available"), player);
             return;
@@ -213,11 +242,12 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         Utils.broadcast(getString("town-created-broadcast")
                 .replace("{player}", player.getDisplayName())
                 .replace("{town}", name), player);
+        Chat.info("&b" + player.getDisplayName() + " &3created town &b" + name);
     }
 
     private void delete(Player player) {
         if (!towns.hasTown(player)) {
-            Chat.send("not-in-town", player);
+            Chat.send(getString("not-in-town"), player);
             return;
         }
 
@@ -237,10 +267,10 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     .replace("{money}", String.valueOf(town.getBalance())), player);
         }
 
-        Chat.info(getString("town-deleted").replace("{town}", town.getName()));
         Utils.broadcast(getString("town-deleted-broadcast")
                 .replace("{player}", player.getDisplayName())
                 .replace("{town}", town.getName()), player);
+        Chat.info("&b" + player.getDisplayName() + " &3deleted town &b" + town.getName());
     }
 
     private void invite(Player player, String[] args) {
@@ -256,7 +286,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         Town town = towns.getTown(player);
         if (!town.isAdmin(player) && !town.isLeader(player)) {
-            Chat.send("not-admin", player);
+            Chat.send(getString("not-admin"), player);
             return;
         }
 
@@ -267,10 +297,11 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         }
 
         plugin.addInvite(target, town);
-        Chat.send(getString("player-invited").replace("{player}", player.getDisplayName()), player);
+        Chat.send(getString("player-invited").replace("{player}", target.getDisplayName()), player);
         Chat.send(getString("invite-received")
                 .replace("{town}", town.getName())
                 .replace("{player}", player.getDisplayName()), target);
+        Chat.info("&b" + player.getDisplayName() + " &3invited &b" + player.getDisplayName() + " &3to town &b" + town.getName());
     }
 
     private void join(Player player, String[] args) {
@@ -301,6 +332,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             if (target != null)
                 Chat.send(getString("player-joined-town").replace("{player}", player.getDisplayName()), target);
         }
+        Chat.info("&b" + player.getDisplayName() + " &3joined the town &b" + town.getName());
 
         town.addMember(new TownMember(player, false));
         plugin.saveTowns();
@@ -320,7 +352,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         Town town = towns.getTown(player);
         if (!town.isAdmin(player) && !town.isLeader(player)) {
-            Chat.send("not-admin", player);
+            Chat.send(getString("not-admin"), player);
             return;
         }
 
@@ -336,6 +368,31 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         Chat.send(getString("player-kicked").replace("{player}", name), player);
         Player target = Bukkit.getPlayer(name);
         if (target != null) Chat.send(getString("you-have-been-kicked").replace("{town}", town.getName()), target);
+        Chat.info("&b" + player.getDisplayName() + " &3kicked &b" + name + " &3from town &b" + town.getName());
+    }
+
+    private void leave(Player player) {
+        if (!towns.hasTown(player)) {
+            Chat.send(getString("not-in-town"), player);
+            return;
+        }
+
+        Town town = towns.getTown(player);
+        if (town.isLeader(player)) {
+            Chat.send(getString("give-first"), player);
+            return;
+        }
+
+        town.removeMember(player.getName());
+        plugin.saveTowns();
+
+        Chat.send(getString("you-left").replace("{town}", town.getName()), player);
+        for (TownMember member : town.getMembers()) {
+            Player target = member.getPlayer();
+            if (target != null)
+                Chat.send(getString("player-left").replace("{player}", player.getDisplayName()), target);
+        }
+        Chat.info("&b" + player.getDisplayName() + " &3left the town &b" + town.getName());
     }
 
     private void give(Player player, String[] args) {
@@ -351,7 +408,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         Town town = towns.getTown(player);
         if (!town.isAdmin(player)) {
-            Chat.send("not-admin", player);
+            Chat.send(getString("not-admin"), player);
             return;
         }
 
@@ -376,11 +433,13 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         Chat.send(getString("leader-transferred").replace("{player}", player.getDisplayName()), player);
         Player target = Bukkit.getPlayer(name);
         if (target != null) Chat.send(getString("you-are-leader"), target);
+
+        Chat.info("&b" + player.getDisplayName() + " &3gave the leader &b" + name);
     }
 
     private void home(Player player) {
         if (!towns.hasTown(player)) {
-            Chat.send("not-in-town", player);
+            Chat.send(getString("not-in-town"), player);
             return;
         }
 
@@ -392,7 +451,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         }
 
         Chat.send(getString("teleport").replace("{time}", String.valueOf(config.getInt("teleport-timer"))), player);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> player.teleport(home), config.getInt("teleport-timer") * 20);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> player.teleport(home), config.getInt("teleport-timer") * 20L);
     }
 
     private void setHome(Player player) {
@@ -492,6 +551,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         Chat.send(getString("deposit-success")
                 .replace("{money}", Utils.formatNumber(amount))
                 .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
+        Chat.info("&b" + player.getDisplayName() + " &3deposited &b" + Utils.formatNumber(amount) + " &3to &b" + town.getName() + " &3bank. Balance: &b" + Utils.formatNumber(town.getBalance()));
     }
 
     private void withdraw(Player player, String[] args) {
@@ -523,12 +583,12 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         if (amount >= 0) return;
 
-        if (town.getBalance() < amount) {
+        if (town.getBalance() < Math.abs(amount)) {
             Chat.send(getString("insufficient-town-money"), player);
             return;
         }
 
-        if (!Utils.giveMoney(player, amount)) {
+        if (!Utils.giveMoney(player, Math.abs(amount))) {
             Chat.send(getString("transaction-error"), player);
             return;
         }
@@ -539,6 +599,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         Chat.send(getString("withdraw-success")
                 .replace("{money}", Utils.formatNumber(amount))
                 .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
+        Chat.info("&b" + player.getDisplayName() + " &3withdrew &b" + Utils.formatNumber(amount) + " &3from &b" + town.getName() + " &3bank. Balance: &b" + Utils.formatNumber(town.getBalance()));
     }
 
     private void user(Player player, String[] args) {
@@ -646,7 +707,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
             Chat.send(getString("player-cannot-deposit").replace("{player}", name), player);
         } else {
-        Chat.send(incorrectUsage("/town user deposit <player> <allaw|deny>"), player);
+            Chat.send(incorrectUsage("/town user deposit <player> <allaw|deny>"), player);
         }
     }
 
@@ -724,12 +785,14 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(Arrays.asList(
+            completions.addAll(TabCompleterUtil.getCompletions(args[0], Arrays.asList(
+                    "baltop",
                     "create",
                     "delete",
                     "invite",
                     "join",
                     "kick",
+                    "leave",
                     "give",
                     "home",
                     "setHome",
@@ -739,68 +802,82 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     "withdraw",
                     "user",
                     "rename"
-            ));
+            )));
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("invite")) {
-                Bukkit.getOnlinePlayers().forEach(p -> completions.add(p.getName()));
+                completions.addAll(TabCompleterUtil.getPlayers(args[1], player.hasPermission("vanillatowns.vanish")));
             } else if (args[0].equalsIgnoreCase("join")) {
                 if (plugin.hasInvite(player)) {
-                    plugin.getInvites(player).forEach(town -> completions.add(town.getName()));
+                    List<String> tmp = new ArrayList<>();
+                    plugin.getInvites(player).forEach(town -> tmp.add(town.getName()));
+                    completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
                 }
             } else if (args[0].equalsIgnoreCase("kick")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
-                        town.getAdmins().forEach(member -> completions.add(member.getName()));
-                        town.getMembers().forEach(member -> completions.add(member.getName()));
+                        List<String> tmp = new ArrayList<>();
+                        town.getAdmins().forEach(member -> tmp.add(member.getName()));
+                        town.getMembers().forEach(member -> tmp.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[0].equalsIgnoreCase("give")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
-                        town.getAdmins().forEach(member -> completions.add(member.getName()));
-                        town.getMembers().forEach(member -> completions.add(member.getName()));
+                        List<String> tmp = new ArrayList<>();
+                        town.getAdmins().forEach(member -> tmp.add(member.getName()));
+                        town.getMembers().forEach(member -> tmp.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[0].equalsIgnoreCase("user")) {
-                completions.addAll(Arrays.asList("setAdmin", "delAdmin", "deposit", "withdraw"));
+                completions.addAll(TabCompleterUtil.getCompletions(args[1], Arrays.asList("setAdmin", "delAdmin", "deposit", "withdraw")));
             }
         } else if (args.length == 3) {
             if (args[1].equalsIgnoreCase("setadmin")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
-                        town.getMembers().forEach(member -> completions.add(member.getName()));
+                        List<String> tmp = new ArrayList<>();
+                        town.getMembers().forEach(member -> tmp.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[1].equalsIgnoreCase("deladmin")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
-                        town.getAdmins().forEach(member -> completions.add(member.getName()));
+                        List<String> tmp = new ArrayList<>();
+                        town.getAdmins().forEach(member -> tmp.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[1].equals("deposit")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player)) {
-                        town.getMembers().forEach(member -> completions.add(member.getName()));
+                        List<String> tmp = new ArrayList<>();
+                        town.getMembers().forEach(member -> tmp.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[2], tmp));
                     }
                 }
             } else if (args[1].equals("withdraw")) {
                 Town town = towns.getTown(player);
                 if (town != null) {
                     if (town.isLeader(player)) {
+                        List<String> tmp = new ArrayList<>();
                         town.getMembers().forEach(member -> completions.add(member.getName()));
+                        completions.addAll(TabCompleterUtil.getCompletions(args[2], tmp));
                     }
                 }
             }
         } else if (args.length == 4) {
             if (args[0].equals("user") && args[1].equals("deposit")) {
-                completions.addAll(Arrays.asList("allow", "deny"));
+                completions.addAll(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
             } else if (args[0].equals("user") && args[1].equals("withdraw")) {
-                completions.addAll(Arrays.asList("allow", "deny"));
+                completions.addAll(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
             }
         }
 

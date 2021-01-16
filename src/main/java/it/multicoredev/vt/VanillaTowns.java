@@ -1,14 +1,18 @@
 package it.multicoredev.vt;
 
+import be.maximvdw.placeholderapi.PlaceholderAPI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.multicoredev.mbcore.spigot.Chat;
 import it.multicoredev.mclib.yaml.Configuration;
+import it.multicoredev.vt.commands.TownChatCommand;
 import it.multicoredev.vt.commands.TownCommand;
 import it.multicoredev.vt.listeners.OnChatListener;
 import it.multicoredev.vt.storage.Town;
+import it.multicoredev.vt.storage.TownMember;
 import it.multicoredev.vt.storage.Towns;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -74,8 +78,11 @@ public class VanillaTowns extends JavaPlugin {
         TownCommand tc = new TownCommand(this, config, towns);
         getCommand("town").setExecutor(tc);
         getCommand("town").setTabCompleter(tc);
+        getCommand("townchat").setExecutor(new TownChatCommand(config, towns));
 
         getServer().getPluginManager().registerEvents(new OnChatListener(config, towns), this);
+
+        initMVdWPlaceholderAPI();
 
         Chat.info("&2VanillaTowns loaded and enabled!");
     }
@@ -96,6 +103,120 @@ public class VanillaTowns extends JavaPlugin {
 
         config = new Configuration(configFile, getResource("config.yml"));
         config.autoload();
+    }
+
+    private void initMVdWPlaceholderAPI() {
+        if (!getServer().getPluginManager().isPluginEnabled("MVdWPlaceholderAPI")) return;
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_name", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            return town.getName();
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_balance", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return Utils.formatNumber(0);
+
+            Town town = towns.getTown(player);
+            if (town == null) return Utils.formatNumber(0);
+
+            return Utils.formatNumber(town.getBalance());
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_role", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            TownMember member = town.getMember(player);
+            if (member.isLeader()) return config.getString("placeholders.leader");
+            if (member.isAdmin()) return config.getString("placeholders.admin");
+            else return config.getString("placeholders.member");
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_role_color", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return "";
+
+            Town town = towns.getTown(player);
+            if (town == null) return "";
+
+            TownMember member = town.getMember(player);
+            if (member.isLeader()) return config.getString(Chat.getTranslated("colors.leader"));
+            if (member.isAdmin()) return config.getString(Chat.getTranslated("colors.admin"));
+            else return config.getString(Chat.getTranslated("colors.member"));
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_home_w", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            Location home = town.getHomeLocation();
+            if (home == null) return config.getString("placeholders.none");
+
+            return home.getWorld().getName();
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_home_x", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            Location home = town.getHomeLocation();
+            if (home == null) return config.getString("placeholders.none");
+
+            return String.valueOf(home.getBlockX());
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_home_y", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            Location home = town.getHomeLocation();
+            if (home == null) return config.getString("placeholders.none");
+
+            return String.valueOf(home.getBlockY());
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_home_z", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            Location home = town.getHomeLocation();
+            if (home == null) return config.getString("placeholders.none");
+
+            return String.valueOf(home.getBlockZ());
+        });
+
+        PlaceholderAPI.registerPlaceholder(this, "vtown_position", event -> {
+            Player player = event.getPlayer();
+            if (player == null) return config.getString("placeholders.none");
+
+            Town town = towns.getTown(player);
+            if (town == null) return config.getString("placeholders.none");
+
+            int pos = towns.getTowns().indexOf(town);
+
+            return String.valueOf(pos + 1);
+        });
     }
 
     private void loadStorage() throws IOException {

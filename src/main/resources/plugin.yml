@@ -1,11 +1,11 @@
-name: VanillaTowns
-version: 1.0.0
+name: ${project.name}
+version: ${project.version}
 main: it.multicoredev.vt.VanillaTowns
-api-version: 1.16
+api-version: 1.13
 author: LoreScheffer
 description: VanillaTowns
 depend: [Vault]
-softdepend: [MCCore]
+softdepend: [MVdWPlaceholderAPI]
 
 commands:
   vanillatowns:
@@ -14,3 +14,6 @@ commands:
   town:
     aliases: [towns]
     description: Town command
+  townchat:
+    aliases: [tchat, tc]
+    description: Town chat

@@ -3,6 +3,7 @@ package it.multicoredev.vt.storage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Town {
+public class Town implements Comparable<Town> {
     private int id;
     private String name;
     private double balance;
@@ -68,7 +69,7 @@ public class Town {
     }
 
     public Location getHomeLocation() {
-        if (world.equals("")) return null;
+        if (world == null || world.equals("")) return null;
         return new Location(Bukkit.getWorld(world), x, y, z);
     }
 
@@ -158,5 +159,10 @@ public class Town {
         TownMember member = getMember(player);
         if (member == null) return false;
         return member.isAdmin();
+    }
+
+    @Override
+    public int compareTo(@NotNull Town town) {
+        return Double.compare(town.getBalance(), getBalance());
     }
 }

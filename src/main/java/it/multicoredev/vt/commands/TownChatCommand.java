@@ -1,14 +1,15 @@
-package it.multicoredev.vt.listeners;
+package it.multicoredev.vt.commands;
 
 import it.multicoredev.mbcore.spigot.Chat;
 import it.multicoredev.mclib.yaml.Configuration;
 import it.multicoredev.vt.storage.Town;
+import it.multicoredev.vt.storage.TownMember;
 import it.multicoredev.vt.storage.Towns;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 /**
  * Copyright © 2020 by Lorenzo Magni
@@ -30,30 +31,57 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class OnChatListener implements Listener {
+public class TownChatCommand implements CommandExecutor {
     private final Configuration config;
     private final Towns towns;
 
-    public OnChatListener(Configuration config, Towns towns) {
+    public TownChatCommand(Configuration config, Towns towns) {
         this.config = config;
         this.towns = towns;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        Town town = towns.getTown(player);
-        String color = "";
-        boolean addSpaces = config.getBoolean("add-spaces-to-town-name");
-
-        if (town != null) {
-            if (town.isLeader(player)) color = config.getString("colors.leader");
-            else if (town.isAdmin(player)) color = config.getString("colors.admin");
-            else color = config.getString("colors.member");
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            Chat.send(getString("not-player"), sender);
+            return true;
         }
 
-        event.setFormat(event.getFormat()
-                .replace("{TOWN}", town == null ? (addSpaces ? " " : "") :
-                        (addSpaces ? " " : "") + Chat.getTranslated(color + town.getName() )+ (addSpaces ? " " : "")));
+        Player player = (Player) sender;
+
+        if (!player.hasPermission("vanillatowns.chat")) {
+            Chat.send(getString("insufficient-perm"), player);
+            return true;
+        }
+
+        if (args.length < 1) {
+            Chat.send(getString("incorrect-usage"), player);
+            return true;
+        }
+
+        if (!towns.hasTown(player)) {
+            Chat.send(getString("not-in-town"), player);
+            return true;
+        }
+
+        Town town = towns.getTown(player);
+        if (town == null) {
+            Chat.send(getString("not-in-town"), player);
+            return true;
+        }
+
+        String msg = config.getString("town-chat").replace("{player}", player.getDisplayName()).replace("{message}", Chat.builder(args));
+
+        for (TownMember member : town.getMembers()) {
+            Player receiver = Bukkit.getPlayer(member.getUuid());
+            if (receiver == null) continue;
+            Chat.send(msg, receiver);
+        }
+
+        return true;
+    }
+
+    private String getString(String path) {
+        return config.getString("messages." + path);
     }
 }
