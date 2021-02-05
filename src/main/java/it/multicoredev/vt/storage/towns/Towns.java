@@ -1,14 +1,11 @@
-package it.multicoredev.vt;
+package it.multicoredev.vt.storage.towns;
 
-import net.milkbowl.vault.economy.EconomyResponse;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
-
-import static it.multicoredev.vt.VanillaTowns.eco;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -30,37 +27,74 @@ import static it.multicoredev.vt.VanillaTowns.eco;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Utils {
-    private static final NumberFormat DTS = new DecimalFormat("#0.00");
-    private static final String KILO = "K";
-    private static final String MEGA = "M";
+public class Towns {
+    private final List<Town> towns;
+    private int lastId;
 
-    public static String formatNumber(double d) {
-        if (d >= 1000000) {
-            return DTS.format(d / 1000000) + MEGA;
-        } else if (d >= 1000) {
-            return DTS.format(d / 1000) + KILO;
+    public Towns() {
+        towns = new ArrayList<>();
+        lastId = -1;
+    }
+
+    public int getFirstId() {
+        return lastId++;
+    }
+
+    public Town getTown(Player player, Town def) {
+        for (Town town : towns) {
+            for (TownMember member : town.getMembers()) {
+                if (member.getUuid().equals(player.getUniqueId())) return town;
+            }
         }
 
-        return DTS.format(d);
+        return def;
     }
 
-    public static boolean hasEnoughMoney(Player player, double amount) {
-        return eco.has(player, amount);
+    public Town getTown(UUID uuid, Town def) {
+        for (Town town : towns) {
+            for (TownMember member : town.getMembers()) {
+                if (member.getUuid().equals(uuid)) return town;
+            }
+        }
+
+        return def;
     }
 
-    public static boolean withdrawMoney(Player player, double amount) {
-        EconomyResponse response = eco.withdrawPlayer(player, amount);
-        return response.transactionSuccess();
+    public Town getTown(String name, Town def) {
+        for (Town town : towns) {
+            if (town.getName().equalsIgnoreCase(name)) return town;
+        }
+
+        return def;
     }
 
-    public static boolean giveMoney(Player player, double amount) {
-        EconomyResponse response = eco.depositPlayer(player, amount);
-        return response.transactionSuccess();
+    public Town getTown(int id, Town def) {
+        for (Town town : towns) {
+            if (town.getId() == id) return town;
+        }
+
+        return def;
     }
 
-    public static boolean giveMoney(UUID uuid, double amount) {
-        EconomyResponse response = eco.depositPlayer(Bukkit.getOfflinePlayer(uuid), amount);
-        return response.transactionSuccess();
+    public void addTown(Town town) {
+        towns.add(town);
+    }
+
+    public void removeTown(Town town) {
+        towns.remove(town);
+    }
+
+    public boolean townExists(String name) {
+        return getTown(name, null) != null;
+    }
+
+    public boolean isInTown(Player player) {
+        return getTown(player, null) != null;
+    }
+
+    public List<Town> getTowns() {
+        List<Town> t = new ArrayList<>(towns);
+        Collections.sort(t);
+        return t;
     }
 }

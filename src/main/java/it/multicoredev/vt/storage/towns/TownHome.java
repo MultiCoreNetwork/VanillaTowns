@@ -1,14 +1,7 @@
-package it.multicoredev.vt;
+package it.multicoredev.vt.storage.towns;
 
-import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.UUID;
-
-import static it.multicoredev.vt.VanillaTowns.eco;
+import org.bukkit.Location;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -30,37 +23,52 @@ import static it.multicoredev.vt.VanillaTowns.eco;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Utils {
-    private static final NumberFormat DTS = new DecimalFormat("#0.00");
-    private static final String KILO = "K";
-    private static final String MEGA = "M";
+public class TownHome {
+    private String world;
+    private Integer x;
+    private Integer y;
+    private Integer z;
+    private Float yaw;
+    private Float pitch;
 
-    public static String formatNumber(double d) {
-        if (d >= 1000000) {
-            return DTS.format(d / 1000000) + MEGA;
-        } else if (d >= 1000) {
-            return DTS.format(d / 1000) + KILO;
-        }
-
-        return DTS.format(d);
+    public TownHome(Location location) {
+        setLocation(location);
     }
 
-    public static boolean hasEnoughMoney(Player player, double amount) {
-        return eco.has(player, amount);
+    public void setLocation(Location location) {
+        this.world = location.getWorld().getName();
+        this.x = location.getBlockX();
+        this.y = location.getBlockY();
+        this.z = location.getBlockZ();
+        this.yaw = location.getYaw();
+        this.pitch = location.getPitch();
     }
 
-    public static boolean withdrawMoney(Player player, double amount) {
-        EconomyResponse response = eco.withdrawPlayer(player, amount);
-        return response.transactionSuccess();
+    public Location getLocation() {
+        return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
     }
 
-    public static boolean giveMoney(Player player, double amount) {
-        EconomyResponse response = eco.depositPlayer(player, amount);
-        return response.transactionSuccess();
+    public String getWorld() {
+        return world;
     }
 
-    public static boolean giveMoney(UUID uuid, double amount) {
-        EconomyResponse response = eco.depositPlayer(Bukkit.getOfflinePlayer(uuid), amount);
-        return response.transactionSuccess();
+    public Integer getX() {
+        return x;
+    }
+
+    public Integer getY() {
+        return y;
+    }
+
+    public Integer getZ() {
+        return z;
+    }
+
+    public Float getYaw() {
+        return yaw;
+    }
+
+    public Float getPitch() {
+        return pitch;
     }
 }

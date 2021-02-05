@@ -1,15 +1,17 @@
 package it.multicoredev.vt.commands;
 
+import com.earth2me.essentials.Essentials;
+import com.earth2me.essentials.User;
 import it.multicoredev.mbcore.spigot.Chat;
 import it.multicoredev.mbcore.spigot.util.TabCompleterUtil;
-import it.multicoredev.mclib.yaml.Configuration;
 import it.multicoredev.vt.Utils;
 import it.multicoredev.vt.VanillaTowns;
-import it.multicoredev.vt.storage.Town;
-import it.multicoredev.vt.storage.TownMember;
-import it.multicoredev.vt.storage.Towns;
+import it.multicoredev.vt.storage.towns.Town;
+import it.multicoredev.vt.storage.towns.TownHome;
+import it.multicoredev.vt.storage.towns.TownMember;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,9 +21,15 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static it.multicoredev.vt.VanillaTowns.config;
+import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
- * Copyright © 2020 by Lorenzo Magni
+ * Copyright © 2020 - 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -42,31 +50,28 @@ import java.util.List;
  */
 public class TownCommand implements CommandExecutor, TabExecutor {
     private final VanillaTowns plugin;
-    private final Configuration config;
-    private final Towns towns;
+    public static final ConcurrentMap<UUID, Integer> invites = new ConcurrentHashMap<>();
 
-    public TownCommand(VanillaTowns plugin, Configuration config, Towns towns) {
+    public TownCommand(VanillaTowns plugin) {
         this.plugin = plugin;
-        this.config = config;
-        this.towns = towns;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            Chat.send(getString("not-player"), sender);
+            Chat.send(config.strings.notPlayer, sender);
             return true;
         }
 
         Player player = (Player) sender;
 
-        if (!player.hasPermission("vanillatowns.town")) {
-            Chat.send(getString("insufficient-perm"), player);
+        if (!hasPermission(player, "vanillatowns.town")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return true;
         }
 
         if (args.length < 1) {
-            town(player, null);
+            help(player);
             return true;
         }
 
@@ -74,53 +79,60 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             case "help":
                 help(player);
                 break;
-            case "baltop":
-                baltop(player);
-                break;
             case "create":
-                create(player, args);
-                break;
-            case "delete":
-                delete(player);
+                if (args.length < 2) help(player);
+                else create(player, args[1]);
                 break;
             case "invite":
-                invite(player, args);
+                if (args.length < 2) help(player);
+                else invite(player, args[1]);
                 break;
             case "join":
-                join(player, args);
-                break;
-            case "kick":
-                kick(player, args);
+                join(player);
                 break;
             case "leave":
                 leave(player);
                 break;
+            case "kick":
+                if (args.length < 2) help(player);
+                else kick(player, args[1]);
+                break;
+            case "rename":
+                if (args.length < 2) help(player);
+                else rename(player, args[1]);
+                break;
             case "give":
-                give(player, args);
+                if (args.length < 2) help(player);
+                else give(player, args[1]);
                 break;
-            case "home":
-                home(player);
-                break;
-            case "sethome":
-                setHome(player);
-                break;
-            case "delhome":
-                delHome(player);
+            case "delete":
+                delete(player);
                 break;
             case "balance":
                 balance(player);
                 break;
             case "deposit":
-                deposit(player, args);
+                if (args.length < 2) help(player);
+                else deposit(player, args[1]);
                 break;
             case "withdraw":
-                withdraw(player, args);
+                if (args.length < 2) help(player);
+                else withdraw(player, args[1]);
+                break;
+            case "baltop":
+                baltop(player);
+                break;
+            case "sethome":
+                setHome(player);
+                break;
+            case "home":
+                home(player);
+                break;
+            case "delhome":
+                delHome(player);
                 break;
             case "user":
                 user(player, args);
-                break;
-            case "rename":
-                rename(player, args);
                 break;
             default:
                 town(player, args[0]);
@@ -130,131 +142,382 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         return true;
     }
 
-    private String getString(String path) {
-        return config.getString("messages." + path);
-    }
-
-    private String incorrectUsage(String usage) {
-        return getString("incorrect-usage").replace("{usage}", usage);
-    }
-
     private void town(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.info")) {
+            help(player);
+            return;
+        }
+
         Town town;
+        boolean self;
+        if (name == null) {
+            town = towns.getTown(player, null);
+            self = true;
 
-        if (name != null) {
-            town = towns.getTown(name);
             if (town == null) {
-                Chat.send(getString("town-not-found"), player);
+                help(player);
                 return;
             }
         } else {
-            if (!towns.hasTown(player)) {
-                Chat.send(getString("not-in-town"), player);
+            town = towns.getTown(name, null);
+            if (town == null) {
+                Chat.send(config.strings.townNotFound, player);
                 return;
             }
 
-            town = towns.getTown(player);
+            self = town.isMember(player);
         }
 
-        TownMember leader = town.getLeader();
-        List<TownMember> admins = town.getAdmins();
-        List<TownMember> members = town.getSimpleMembers();
-        StringBuilder adminsName = new StringBuilder();
-        StringBuilder membersName = new StringBuilder();
+        if (!self && !hasPermission(player, "vanillatowns.info.other")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
 
-        if (admins.size() > 0) {
-            for (int i = 0; i < admins.size(); i++) {
-                adminsName.append(admins.get(i).getName());
-                if (i < admins.size() - 1) adminsName.append(", ");
+        TownHome home = town.getHome();
+        String homeStr = home == null ? config.strings.notSet : config.strings.homeFormat
+                .replace("{world}", home.getWorld())
+                .replace("{x}", String.valueOf(home.getX()))
+                .replace("{y}", String.valueOf(home.getY()))
+                .replace("{z}", String.valueOf(home.getZ()));
+
+        if (self) {
+            for (String str : config.strings.townInfoSelf) {
+                Chat.send(str.replace("{town}", town.getName())
+                                .replace("{balance}", Utils.formatNumber(town.getBalance()))
+                                .replace("{leader}", town.getLeader().getName())
+                                .replace("{admins}", town.getAdminNames())
+                                .replace("{members}", town.getSimpleMembersNames())
+                                .replace("{home}", homeStr)
+                        , player);
             }
         } else {
-            adminsName.append("[]");
-        }
-
-        if (members.size() > 0) {
-            for (int i = 0; i < members.size(); i++) {
-                membersName.append(members.get(i).getName());
-                if (i < members.size() - 1) membersName.append(", ");
+            if (hasStaffPermission(player, "vanillatowns.staff.info")) {
+                for (String str : config.strings.townInfoStaff) {
+                    Chat.send(str.replace("{town}", town.getName())
+                                    .replace("{balance}", Utils.formatNumber(town.getBalance()))
+                                    .replace("{leader}", town.getLeader().getName())
+                                    .replace("{admins}", town.getAdminNames())
+                                    .replace("{members}", town.getSimpleMembersNames())
+                                    .replace("{home}", homeStr)
+                            , player);
+                }
+            } else {
+                for (String str : config.strings.townInfoOther) {
+                    Chat.send(str.replace("{town}", town.getName())
+                                    .replace("{balance}", Utils.formatNumber(town.getBalance()))
+                                    .replace("{leader}", town.getLeader().getName())
+                                    .replace("{admins}", town.getAdminNames())
+                                    .replace("{members}", town.getSimpleMembersNames())
+                                    .replace("{home}", homeStr)
+                            , player);
+                }
             }
-        } else {
-            membersName.append("[]");
-        }
-
-        for (String str : config.getStringList("town")) {
-            Chat.send(str.replace("{town}", town.getName())
-                    .replace("{balance}", Utils.formatNumber(town.getBalance()))
-                    .replace("{leader}", leader != null ? leader.getName() : "")
-                    .replace("{admins}", adminsName.toString())
-                    .replace("{members}", membersName.toString()), player);
         }
     }
 
     private void help(Player player) {
-        for (String line : config.getStringList("help")) {
-            Chat.send(line, player);
-        }
-    }
-
-    private void baltop(Player player) {
-        List<Town> list = this.towns.getTowns();
-        Town playerTown = this.towns.getTown(player);
-        boolean isInTop = false;
-
-        Chat.send(getString("baltop-head"), player);
-        for (int i = 0; i < 10; i++) {
-            Town town = list.get(i);
-            if (playerTown != null && playerTown.equals(town)) isInTop = true;
-
-            Chat.send(getString("baltop")
-                    .replace("{position}", String.valueOf(i + 1))
-                    .replace("{town}", town.getName())
-                    .replace("{balance}", String.valueOf(Utils.formatNumber(town.getBalance()))), player);
-        }
-        if (playerTown != null && !isInTop) Chat.send(getString("baltop")
-                .replace("{position}", String.valueOf(list.indexOf(playerTown) + 1))
-                .replace("{town}", playerTown.getName())
-                .replace("{balance}", String.valueOf(Utils.formatNumber(playerTown.getBalance()))), player);
-        Chat.send(getString("baltop-footer"), player);
-    }
-
-    private void create(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town create <name>"), player);
+        if (!hasPermission(player, "vanillatowns.help")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        if (towns.hasTown(player)) {
-            Chat.send(getString("already-in-town"), player);
+        for (String str : config.strings.helpMessage) {
+            Chat.send(str, player);
+        }
+    }
+
+    private void create(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.create")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        String name = Chat.getDiscolored(args[1]);
+        if (towns.isInTown(player)) {
+            Chat.send(config.strings.alreadyInTown, player);
+            return;
+        }
+
+        name = Chat.getDiscolored(name);
         if (towns.townExists(name)) {
-            Chat.send(getString("name-not-available"), player);
+            Chat.send(config.strings.nameNotAvailable, player);
             return;
         }
 
         Town town = new Town(towns.getFirstId(), name, player);
         towns.addTown(town);
-        plugin.saveTowns();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, plugin::saveTowns);
 
-        Chat.send(getString("town-created").replace("{town}", name), player);
-        Utils.broadcast(getString("town-created-broadcast")
-                .replace("{player}", player.getDisplayName())
-                .replace("{town}", name), player);
-        Chat.info("&b" + player.getDisplayName() + " &3created town &b" + name);
+        Chat.send(config.strings.townCreated.replace("{town}", name), player);
+
+        if (config.broadcastTownCreation) {
+            String bc = config.strings.townCreatedBC.replace("{player}", player.getDisplayName()).replace("{town}", name);
+            broadcast(bc, "vanillatowns.broadcast", player);
+        }
+
+        if (config.logTowns) Chat.info("&e" + player.getDisplayName() + " &bcreated the town &e" + name);
     }
 
-    private void delete(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+    private void invite(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.invite")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isAdmin(player) && !town.isLeader(player)) {
+            Chat.send(config.strings.notAdmin, player);
+            return;
+        }
+
+        Player target = Bukkit.getPlayer(name);
+        if (target == null) {
+            Chat.send(config.strings.playerNotFound, player);
+            return;
+        }
+
+        if (!hasPermission(target, "vanillatowns.join")) {
+            Chat.send(config.strings.cannotInvite, player);
+            return;
+        }
+
+        invites.put(target.getUniqueId(), town.getId());
+
+        Chat.send(config.strings.playerInviteSent.replace("{player}", target.getDisplayName()), player);
+        Chat.send(config.strings.playerInviteReceived.replace("{town}", town.getName()).replace("{player}", player.getDisplayName()), target);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b invited &e" + target.getDisplayName() + "&b in the town &e" + town.getName());
+    }
+
+    private void join(Player player) {
+        if (!hasPermission(player, "vanillatowns.join")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!invites.containsKey(player.getUniqueId())) {
+            Chat.send(config.strings.noInvites, player);
+            return;
+        }
+
+        if (towns.isInTown(player)) {
+            Chat.send(config.strings.alreadyInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(invites.get(player.getUniqueId()), null);
+        if (town == null) {
+            Chat.send(config.strings.noInvites, player);
+            return;
+        }
+
+        town.addMember(new TownMember(player, false));
+        plugin.saveTowns();
+        invites.remove(player.getUniqueId());
+
+        Chat.send(config.strings.playerJoin.replace("{town}", town.getName()), player);
+
+        String msg = config.strings.playerJoinMembers.replace("{player}", player.getDisplayName());
+        for (Player member : town.getOnlineMembers()) Chat.send(msg, member);
+
+        if (config.logTowns) Chat.info("&e" + player.getDisplayName() + "&b joined the town &e" + town.getName());
+    }
+
+    private void leave(Player player) {
+        if (!hasPermission(player, "vanillatowns.join")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (town.isLeader(player)) {
+            Chat.send(config.strings.leaveDenied, player);
+            return;
+        }
+
+        town.removeMember(player.getUniqueId());
+        plugin.saveTowns();
+
+        Chat.send(config.strings.playerLeft.replace("{town}", town.getName()), player);
+
+        String msg = config.strings.playerLeftMembers.replace("{player}", player.getDisplayName());
+        for (Player member : town.getOnlineMembers()) Chat.send(msg, member);
+
+        Chat.info("&e" + player.getDisplayName() + "&b left the town &e" + town.getName());
+    }
+
+    private void kick(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.kick")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isAdmin(player) && !town.isLeader(player)) {
+            Chat.send(config.strings.notAdmin, player);
+            return;
+        }
+
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
+            return;
+        }
+
+        if (town.getMember(name).isLeader()) {
+            Chat.send(config.strings.notToTheLeader, player);
+            return;
+        }
+
+        if (town.getMember(name).isAdmin() && !town.isLeader(player)) {
+            Chat.send(config.strings.notLeader, player);
+            return;
+        }
+
+        town.removeMember(name);
+        plugin.saveTowns();
+
+        Player target = Bukkit.getPlayer(name);
+        if (target != null) Chat.send(config.strings.playerKicked.replace("{town}", town.getName()), target);
+
+        String msg = config.strings.playerKickedMembers.replace("{player}", target != null ? target.getDisplayName() : name);
+        for (Player member : town.getOnlineMembers()) Chat.send(msg, member);
+
+        Chat.info("&e" + player.getDisplayName() + "&b kicked &e" + (target != null ? target.getDisplayName() : name) + "&b from town &e" + town.getName());
+    }
+
+    private void rename(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.rename")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
 
         if (!town.isLeader(player)) {
-            Chat.send(getString("not-leader"), player);
+            Chat.send(config.strings.notLeader, player);
+            return;
+        }
+
+        name = Chat.getDiscolored(name);
+        if (towns.townExists(name)) {
+            Chat.send(config.strings.nameNotAvailable, player);
+            return;
+        }
+
+        String old = town.getName();
+        town.setName(name);
+        plugin.saveTowns();
+
+        if (config.broadcastTownRename) {
+            String bc = config.strings.townRenamedBC
+                    .replace("{player}", player.getDisplayName())
+                    .replace("{town_old}", old)
+                    .replace("{town_new}", name);
+            broadcast(bc, "vanillatowns.broadcast", player);
+        }
+
+        Chat.send(config.strings.townRenamed.replace("{town}", name), player);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + " &brenamed the town &e" + old + "&b to &e" + name);
+    }
+
+    private void give(Player player, String name) {
+        if (!hasPermission(player, "vanillatowns.give")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isLeader(player)) {
+            Chat.send(config.strings.notLeader, player);
+            return;
+        }
+
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
+            return;
+        }
+
+        town.getMember(player.getUniqueId()).setLeader(false);
+        town.getMember(name).setLeader(true);
+        plugin.saveTowns();
+
+        String msg = config.strings.leaderTransfer.replace("{player}", name);
+        for (Player member : town.getOnlineMembers()) Chat.send(msg, member);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b gave &e" + town.getName() + "&b leader role to &e" + name);
+    }
+
+    private void delete(Player player) {
+        if (!hasPermission(player, "vanillatowns.create")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isLeader(player)) {
+            Chat.send(config.strings.notLeader, player);
             return;
         }
 
@@ -263,516 +526,489 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         if (town.getBalance() > 0) {
             Utils.giveMoney(player, town.getBalance());
-            Chat.send(getString("town-balance-chargeback")
-                    .replace("{money}", String.valueOf(town.getBalance())), player);
+            Chat.send(config.strings.balanceChargeback.replace("{money}", Utils.formatNumber(town.getBalance())), player);
         }
 
-        Utils.broadcast(getString("town-deleted-broadcast")
-                .replace("{player}", player.getDisplayName())
-                .replace("{town}", town.getName()), player);
-        Chat.info("&b" + player.getDisplayName() + " &3deleted town &b" + town.getName());
-    }
-
-    private void invite(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town invite <player>"), player);
-            return;
+        if (config.broadcastTownDeletion) {
+            String bc = config.strings.townDeletedBC.replace("{player}", player.getDisplayName()).replace("{town}", town.getName());
+            broadcast(bc, "vanillatowns.broadcast", player);
         }
 
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
+        Chat.send(config.strings.townDeleted, player);
 
-        Town town = towns.getTown(player);
-        if (!town.isAdmin(player) && !town.isLeader(player)) {
-            Chat.send(getString("not-admin"), player);
-            return;
-        }
-
-        Player target = Bukkit.getPlayer(args[1]);
-        if (target == null) {
-            Chat.send(getString("player-not-found"), player);
-            return;
-        }
-
-        plugin.addInvite(target, town);
-        Chat.send(getString("player-invited").replace("{player}", target.getDisplayName()), player);
-        Chat.send(getString("invite-received")
-                .replace("{town}", town.getName())
-                .replace("{player}", player.getDisplayName()), target);
-        Chat.info("&b" + player.getDisplayName() + " &3invited &b" + player.getDisplayName() + " &3to town &b" + town.getName());
-    }
-
-    private void join(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town join <town>"), player);
-            return;
-        }
-
-        if (towns.hasTown(player)) {
-            Chat.send(getString("already-in-team"), player);
-            return;
-        }
-
-        if (!plugin.hasInvite(player)) {
-            Chat.send(getString("no-invites"), player);
-            return;
-        }
-
-        Town town = plugin.getInvite(player, args[1]);
-        if (town == null) {
-            Chat.send(getString("invite-not-found"), player);
-            return;
-        }
-
-        Chat.send(getString("town-joined").replace("{town}", town.getName()), player);
-        for (TownMember member : town.getMembers()) {
-            Player target = member.getPlayer();
-            if (target != null)
-                Chat.send(getString("player-joined-town").replace("{player}", player.getDisplayName()), target);
-        }
-        Chat.info("&b" + player.getDisplayName() + " &3joined the town &b" + town.getName());
-
-        town.addMember(new TownMember(player, false));
-        plugin.saveTowns();
-        plugin.removeInvite(town);
-    }
-
-    private void kick(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town kick <player>"), player);
-            return;
-        }
-
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        if (!town.isAdmin(player) && !town.isLeader(player)) {
-            Chat.send(getString("not-admin"), player);
-            return;
-        }
-
-        String name = args[1];
-        if (!town.hasMember(name)) {
-            Chat.send(getString("not-in-your-town"), player);
-            return;
-        }
-
-        town.removeMember(name);
-        plugin.saveTowns();
-
-        Chat.send(getString("player-kicked").replace("{player}", name), player);
-        Player target = Bukkit.getPlayer(name);
-        if (target != null) Chat.send(getString("you-have-been-kicked").replace("{town}", town.getName()), target);
-        Chat.info("&b" + player.getDisplayName() + " &3kicked &b" + name + " &3from town &b" + town.getName());
-    }
-
-    private void leave(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        if (town.isLeader(player)) {
-            Chat.send(getString("give-first"), player);
-            return;
-        }
-
-        town.removeMember(player.getName());
-        plugin.saveTowns();
-
-        Chat.send(getString("you-left").replace("{town}", town.getName()), player);
-        for (TownMember member : town.getMembers()) {
-            Player target = member.getPlayer();
-            if (target != null)
-                Chat.send(getString("player-left").replace("{player}", player.getDisplayName()), target);
-        }
-        Chat.info("&b" + player.getDisplayName() + " &3left the town &b" + town.getName());
-    }
-
-    private void give(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town give <player>"), player);
-            return;
-        }
-
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        if (!town.isAdmin(player)) {
-            Chat.send(getString("not-admin"), player);
-            return;
-        }
-
-        String name = args[1];
-        if (!town.hasMember(name)) {
-            Chat.send(getString("not-in-your-town"), player);
-            return;
-        }
-
-        TownMember ex = town.getMember(player);
-        TownMember nw = town.getMember(name);
-
-        if (ex == null || nw == null) {
-            Chat.send(getString("town-give-failed"), player);
-            return;
-        }
-
-        ex.setLeader(false);
-        nw.setLeader(true);
-        plugin.saveTowns();
-
-        Chat.send(getString("leader-transferred").replace("{player}", player.getDisplayName()), player);
-        Player target = Bukkit.getPlayer(name);
-        if (target != null) Chat.send(getString("you-are-leader"), target);
-
-        Chat.info("&b" + player.getDisplayName() + " &3gave the leader &b" + name);
-    }
-
-    private void home(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        Location home = town.getHomeLocation();
-        if (home == null) {
-            Chat.send(getString("town-without-home"), player);
-            return;
-        }
-
-        Chat.send(getString("teleport").replace("{time}", String.valueOf(config.getInt("teleport-timer"))), player);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> player.teleport(home), config.getInt("teleport-timer") * 20L);
-    }
-
-    private void setHome(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        if (!town.isLeader(player) && !town.isAdmin(player)) {
-            Chat.send(getString("not-admin"), player);
-            return;
-        }
-
-        town.setHomeLocation(player.getLocation());
-        plugin.saveTowns();
-
-        Chat.send(getString("home-set")
-                .replace("{location}",
-                        (int) player.getLocation().getX() + " " +
-                                (int) player.getLocation().getY() + " " +
-                                (int) player.getLocation().getZ()), player);
-    }
-
-    private void delHome(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        if (!town.isLeader(player) && !town.isAdmin(player)) {
-            Chat.send(getString("not-admin"), player);
-            return;
-        }
-
-        town.setHomeLocation(null);
-        plugin.saveTowns();
-
-        Chat.send(getString("home-removed"), player);
+        if (config.logTowns) Chat.info("&e" + player.getDisplayName() + " &bdeleted the town &e" + town.getName());
     }
 
     private void balance(Player player) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+        if (!hasPermission(player, "vanillatowns.balance")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
 
-        Chat.send(getString("town-balance")
-                .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Chat.send(config.strings.townBalance.replace("{money}", Utils.formatNumber(town.getBalance())), player);
     }
 
-    private void deposit(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town deposit <amount>"), player);
+    private void deposit(Player player, String a) {
+        if (!hasPermission(player, "vanillatowns.deposit")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
-        TownMember member = town.getMember(player);
-        if (!member.canDeposit() && !member.isAdmin() && !member.isLeader()) {
-            Chat.send(getString("cannot-deposit"), player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.canDeposit(player)) {
+            Chat.send(config.strings.cannotDeposit, player);
             return;
         }
 
         double amount;
         try {
-            amount = Double.parseDouble(args[1]);
-            amount = Math.abs(amount);
+            amount = Double.parseDouble(a);
         } catch (NumberFormatException ignored) {
-            Chat.send(incorrectUsage("/town deposit <amount>"), player);
+            help(player);
             return;
         }
 
-        if (amount <= 0) return;
+        if (amount < 0) amount = Math.abs(amount);
 
         if (!Utils.hasEnoughMoney(player, amount)) {
-            Chat.send(getString("insufficient-money"), player);
+            Chat.send(config.strings.insufficientMoney, player);
             return;
         }
 
         if (!Utils.withdrawMoney(player, amount)) {
-            Chat.send(getString("transaction-error"), player);
+            Chat.send(config.strings.transactionError, player);
             return;
         }
 
         town.addBalance(amount);
         plugin.saveTowns();
 
-        Chat.send(getString("deposit-success")
-                .replace("{money}", Utils.formatNumber(amount))
-                .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
-        Chat.info("&b" + player.getDisplayName() + " &3deposited &b" + Utils.formatNumber(amount) + " &3to &b" + town.getName() + " &3bank. Balance: &b" + Utils.formatNumber(town.getBalance()));
+        Chat.send(config.strings.depositSuccess.replace("{money}", Utils.formatNumber(amount)), player);
+        Chat.send(config.strings.townBalance.replace("{money}", Utils.formatNumber(town.getBalance())), player);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b deposited &e" + Utils.formatNumber(amount) + "&b to &e" + town.getName() + "&b bank. Balance: &e" + Utils.formatNumber(town.getBalance()));
     }
 
-    private void withdraw(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town withdraw <amount>"), player);
+    private void withdraw(Player player, String a) {
+        if (!hasPermission(player, "vanillatowns.withdraw")) {
+            Chat.send(config.strings.insufficientPerms, player);
             return;
         }
 
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
-        TownMember member = town.getMember(player);
-        if (!member.canWithdraw() && !member.isAdmin() && !member.isLeader()) {
-            Chat.send(getString("cannot-withdraw"), player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.canWithdraw(player)) {
+            Chat.send(config.strings.cannotWithdraw, player);
             return;
         }
 
         double amount;
         try {
-            amount = Double.parseDouble(args[1]);
-            amount = -Math.abs(amount);
+            amount = Double.parseDouble(a);
         } catch (NumberFormatException ignored) {
-            Chat.send(incorrectUsage("/town withdraw <amount>"), player);
+            help(player);
             return;
         }
 
-        if (amount >= 0) return;
+        if (amount < 0) amount = Math.abs(amount);
 
-        if (town.getBalance() < Math.abs(amount)) {
-            Chat.send(getString("insufficient-town-money"), player);
+        if (town.getBalance() < amount) {
+            Chat.send(config.strings.insufficientTownMoney, player);
             return;
         }
 
-        if (!Utils.giveMoney(player, Math.abs(amount))) {
-            Chat.send(getString("transaction-error"), player);
+        if (!Utils.giveMoney(player, amount)) {
+            Chat.send(config.strings.transactionError, player);
             return;
         }
 
-        town.addBalance(amount);
+        town.addBalance(-amount);
         plugin.saveTowns();
 
-        Chat.send(getString("withdraw-success")
-                .replace("{money}", Utils.formatNumber(amount))
-                .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
-        Chat.info("&b" + player.getDisplayName() + " &3withdrew &b" + Utils.formatNumber(amount) + " &3from &b" + town.getName() + " &3bank. Balance: &b" + Utils.formatNumber(town.getBalance()));
+        Chat.send(config.strings.withdrawSuccess.replace("{money}", Utils.formatNumber(amount)), player);
+        Chat.send(config.strings.townBalance.replace("{money}", Utils.formatNumber(town.getBalance())), player);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b withdrew &e" + Utils.formatNumber(amount) + "&b to &e" + town.getName() + "&b bank. Balance: &e" + Utils.formatNumber(town.getBalance()));
+    }
+
+    private void baltop(Player player) {
+        if (!hasPermission(player, "vanillatowns.baltop")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        List<Town> list = towns.getTowns();
+        Town playerTown = towns.getTown(player, null);
+        boolean isTownInTop = false;
+
+        Chat.send(config.strings.baltopHead, player);
+
+        for (int i = 0; i < 10; i++) {
+            Town town = list.get(i);
+            if (town.equals(playerTown)) isTownInTop = true;
+
+            Chat.send(config.strings.baltop
+                    .replace("{position}", String.valueOf(i + 1))
+                    .replace("{town}", town.getName())
+                    .replace("{balance}", Utils.formatNumber(town.getBalance())), player);
+        }
+
+        if (playerTown != null && !isTownInTop) {
+            Chat.send(config.strings.baltop
+                    .replace("{position}", String.valueOf(list.indexOf(playerTown) + 1))
+                    .replace("{town}", playerTown.getName())
+                    .replace("{balance}", Utils.formatNumber(playerTown.getBalance())), player);
+        }
+
+        Chat.send(config.strings.baltopTail, player);
+    }
+
+    private void setHome(Player player) {
+        if (!hasPermission(player, "vanillatowns.home.edit")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isAdmin(player) && !town.isLeader(player)) {
+            Chat.send(config.strings.notAdmin, player);
+            return;
+        }
+
+        if (isBlacklistedDimension(player.getWorld())) {
+            Chat.send(config.strings.blacklistedDim, player);
+            return;
+        }
+
+        town.setHome(new TownHome(player.getLocation()));
+        plugin.saveTowns();
+
+        Chat.send(config.strings.homeSet, player);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b set the home of the town &e" + town.getName() + "&b to &e" + player.getLocation().toString());
+    }
+
+    private void home(Player player) {
+        if (!hasPermission(player, "vanillatowns.home")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        boolean isJailed = false;
+        int time = config.teleportTimer;
+
+        if (Bukkit.getPluginManager().isPluginEnabled("EssentialsX")) {
+            Essentials essentials = (Essentials) Bukkit.getPluginManager().getPlugin("EssentialsX");
+
+            if (essentials != null) {
+                User user = essentials.getUser(player.getUniqueId());
+                if (user != null) isJailed = user.isJailed();
+            }
+        }
+
+        if (isJailed) {
+            Chat.send(config.strings.jailed, player);
+            return;
+        }
+
+        if (town.getHome() == null) {
+            Chat.send(config.strings.noHome, player);
+            return;
+        }
+
+        Location home = town.getHome().getLocation();
+
+        if (time <= 0  || hasStaffPermission(player, "vanillatowns.instanttp")) {
+            player.teleport(home);
+            return;
+        }
+
+        Chat.send(config.strings.teleportCountdown.replace("{time}", String.valueOf(time)), player);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> player.teleport(home), time * 20L);
+    }
+
+    private void delHome(Player player) {
+        if (!hasPermission(player, "vanillatowns.home.edit")) {
+            Chat.send(config.strings.insufficientPerms, player);
+            return;
+        }
+
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
+        if (!town.isAdmin(player) && !town.isLeader(player)) {
+            Chat.send(config.strings.notAdmin, player);
+            return;
+        }
+
+        town.setHome(null);
+        plugin.saveTowns();
+
+        Chat.send(config.strings.homeRemoved, player);
+
+        if (config.logTowns)
+            Chat.info("&e" + player.getDisplayName() + "&b removed the home of the town &e" + town.getName());
     }
 
     private void user(Player player, String[] args) {
         switch (args[1].toLowerCase()) {
             case "setadmin":
-                setAdmin(player, args);
+                if (args.length < 3) help(player);
+                else setAdmin(player, args[2]);
                 break;
             case "deladmin":
-                delAdmin(player, args);
+                if (args.length < 3) help(player);
+                else delAdmin(player, args[2]);
                 break;
             case "deposit":
-                canDeposit(player, args);
+                canDeposit(player, args[2], args[3]);
                 break;
             case "withdraw":
-                canWithdraw(player, args);
+                canWithdraw(player, args[2], args[3]);
                 break;
             default:
-                Chat.send(incorrectUsage("/town user <setadmin|deladmin|deposit|withdraw> <player>"), player);
+                help(player);
                 break;
         }
     }
 
-    private void setAdmin(Player player, String[] args) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+    private void setAdmin(Player player, String name) {
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
         if (!town.isLeader(player)) {
-            Chat.send(getString("not-leader"), player);
+            Chat.send(config.strings.notLeader, player);
             return;
         }
 
-        String name = args[2];
-        TownMember member = town.getMember(name);
-        if (member == null) {
-            Chat.send(getString("not-in-your-town"), player);
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
             return;
         }
 
-        member.setAdmin(true);
+        town.getMember(name).setAdmin(true);
         plugin.saveTowns();
 
-        Chat.send(getString("admin-promote"), player);
+        Chat.send(config.strings.adminPromoted, player);
+
         Player target = Bukkit.getPlayer(name);
-        if (target != null) Chat.send(getString("admin-promote-target"), target);
+        if (target != null) Chat.send(config.strings.adminPromotedTarget, target);
+
+        if (config.logTowns) Chat.info("&e" + player.getDisplayName() + "&b promoted &e" + name + "&b to town admin");
     }
 
-    private void delAdmin(Player player, String[] args) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+    private void delAdmin(Player player, String name) {
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
         if (!town.isLeader(player)) {
-            Chat.send(getString("not-leader"), player);
+            Chat.send(config.strings.notLeader, player);
             return;
         }
 
-        String name = args[2];
-        TownMember member = town.getMember(name);
-        if (member == null) {
-            Chat.send(getString("not-in-your-town"), player);
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
             return;
         }
 
-        member.setAdmin(false);
+        town.getMember(name).setAdmin(false);
         plugin.saveTowns();
 
-        Chat.send(getString("admin-demote"), player);
+        Chat.send(config.strings.adminDemoted, player);
+
         Player target = Bukkit.getPlayer(name);
-        if (target != null) Chat.send(getString("admin-demote-target"), target);
+        if (target != null) Chat.send(config.strings.adminDemotedTarget, target);
+
+        if (config.logTowns) Chat.info("&e" + player.getDisplayName() + "&b demoted &e" + name + "&b to town admin");
     }
 
-    private void canDeposit(Player player, String[] args) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+    private void canDeposit(Player player, String name, String bool) {
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
         if (!town.isLeader(player)) {
-            Chat.send(getString("not-leader"), player);
+            Chat.send(config.strings.notLeader, player);
             return;
         }
 
-        String name = args[2];
-        TownMember member = town.getMember(name);
-        if (member == null) {
-            Chat.send(getString("not-in-your-town"), player);
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
             return;
         }
 
-        String bool = args[3];
-        if (bool.equals("allow")) {
-            member.setDeposit(true);
+        if (bool.equalsIgnoreCase("allow") || bool.equalsIgnoreCase("true")) {
+            town.getMember(name).setDeposit(true);
             plugin.saveTowns();
 
-            Chat.send(getString("player-can-deposit").replace("{player}", name), player);
-        } else if (bool.equals("deny")) {
-            member.setDeposit(false);
+            Chat.send(config.strings.allowPlayerDeposit.replace("{player}", name), player);
+
+            Player target = Bukkit.getPlayer(name);
+            if (target != null) Chat.send(config.strings.allowPlayerDepositTarget, target);
+        } else if (bool.equalsIgnoreCase("deny") || bool.equalsIgnoreCase("false")) {
+            town.getMember(name).setDeposit(false);
             plugin.saveTowns();
 
-            Chat.send(getString("player-cannot-deposit").replace("{player}", name), player);
+            Chat.send(config.strings.allowPlayerDeposit.replace("{player}", name), player);
+
+            Player target = Bukkit.getPlayer(name);
+            if (target != null) Chat.send(config.strings.allowPlayerDepositTarget, target);
         } else {
-            Chat.send(incorrectUsage("/town user deposit <player> <allaw|deny>"), player);
+            help(player);
         }
     }
 
-    private void canWithdraw(Player player, String[] args) {
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
+    private void canWithdraw(Player player, String name, String bool) {
+        if (!towns.isInTown(player)) {
+            Chat.send(config.strings.notInTown, player);
             return;
         }
 
-        Town town = towns.getTown(player);
+        Town town = towns.getTown(player, null);
+        if (town == null) {
+            Chat.send(config.strings.notInTown, player);
+            return;
+        }
+
         if (!town.isLeader(player)) {
-            Chat.send(getString("not-leader"), player);
+            Chat.send(config.strings.notLeader, player);
             return;
         }
 
-        String name = args[2];
-        TownMember member = town.getMember(name);
-        if (member == null) {
-            Chat.send(getString("not-in-your-town"), player);
+        if (!town.isMember(name)) {
+            Chat.send(config.strings.notInYourTown, player);
             return;
         }
 
-        String bool = args[3];
-        if (bool.equals("allow")) {
-            member.setWithdraw(true);
+        if (bool.equalsIgnoreCase("allow") || bool.equalsIgnoreCase("true")) {
+            town.getMember(name).setWithdraw(true);
             plugin.saveTowns();
 
-            Chat.send(getString("player-can-withdraw").replace("{player}", name), player);
-        } else if (bool.equals("deny")) {
-            member.setWithdraw(false);
+            Chat.send(config.strings.allowPlayerWithdraw.replace("{player}", name), player);
+
+            Player target = Bukkit.getPlayer(name);
+            if (target != null) Chat.send(config.strings.allowPlayerWithdrawTarget, target);
+        } else if (bool.equalsIgnoreCase("deny") || bool.equalsIgnoreCase("false")) {
+            town.getMember(name).setWithdraw(false);
             plugin.saveTowns();
 
-            Chat.send(getString("player-cannot-withdraw").replace("{player}", name), player);
+            Chat.send(config.strings.allowPlayerWithdraw.replace("{player}", name), player);
+
+            Player target = Bukkit.getPlayer(name);
+            if (target != null) Chat.send(config.strings.allowPlayerWithdrawTarget, target);
         } else {
-            Chat.send(incorrectUsage("/town user withdraw <player> <allaw|deny>"), player);
+            help(player);
         }
     }
 
-    private void rename(Player player, String[] args) {
-        if (args.length < 2) {
-            Chat.send(incorrectUsage("/town rename <name>"), player);
-            return;
+    private boolean hasPermission(Player player, String perm) {
+        return player.hasPermission(perm) || player.hasPermission("vanillatowns.player") || player.hasPermission("vanillatowns.staff");
+    }
+
+    private boolean hasStaffPermission(Player player, String perm) {
+        return player.hasPermission(perm) || player.hasPermission("vanillatowns.staff");
+    }
+
+    private void broadcast(String msg, String perm, Player exception) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player == exception) continue;
+            if (!player.hasPermission(perm)) continue;
+            Chat.send(msg, player);
+        }
+    }
+
+    private boolean isBlacklistedDimension(World world) {
+        for (String dim : config.dimBlacklist) {
+            if (dim.equalsIgnoreCase(world.getName())) return true;
         }
 
-        if (!towns.hasTown(player)) {
-            Chat.send(getString("not-in-town"), player);
-            return;
-        }
-
-        Town town = towns.getTown(player);
-        TownMember member = town.getMember(player);
-        if (!member.isLeader()) {
-            Chat.send(getString("not-leader"), player);
-            return;
-        }
-
-        String name = args[1];
-        if (towns.townExists(name)) {
-            Chat.send(getString("name-not-available"), player);
-            return;
-        }
-
-        town.setName(name);
-        plugin.saveTowns();
-        Chat.send(getString("town-rename").replace("{town}", town.getName()), player);
+        return false;
     }
 
     @Override
@@ -780,40 +1016,42 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         if (!(sender instanceof Player)) return null;
         Player player = (Player) sender;
 
-        if (!player.hasPermission("vanillatowns.town")) return null;
+        if (!hasPermission(player, "vanillatowns.player")) return null;
 
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(TabCompleterUtil.getCompletions(args[0], Arrays.asList(
-                    "baltop",
-                    "create",
-                    "delete",
-                    "invite",
-                    "join",
-                    "kick",
-                    "leave",
-                    "give",
-                    "home",
-                    "setHome",
-                    "delHome",
-                    "balance",
-                    "deposit",
-                    "withdraw",
-                    "user",
-                    "rename"
-            )));
+            List<String> tmp = new ArrayList<>();
+
+            if (hasPermission(player, "vanillatowns.baltop")) tmp.add("baltop");
+            if (hasPermission(player, "vanillatowns.create")) {
+                tmp.add("create");
+                tmp.add("delete");
+            }
+            if (hasPermission(player, "vanillatowns.invite")) tmp.add("invite");
+            if (hasPermission(player, "vanillatowns.join")) {
+                tmp.add("join");
+                tmp.add("leave");
+            }
+            if (hasPermission(player, "vanillatowns.kick")) tmp.add("kick");
+            if (hasPermission(player, "vanillatowns.give")) tmp.add("give");
+            if (hasPermission(player, "vanillatowns.home")) tmp.add("home");
+            if (hasPermission(player, "vanillatowns.home.edit")) {
+                tmp.add("setHome");
+                tmp.add("delHome");
+            }
+            if (hasPermission(player, "vanillatowns.balance")) tmp.add("balance");
+            if (hasPermission(player, "vanillatowns.deposit")) tmp.add("deposit");
+            if (hasPermission(player, "vanillatowns.withdraw")) tmp.add("withdraw");
+            if (hasPermission(player, "vanillatowns.rename")) tmp.add("rename");
+
+            tmp.add("user");
+            completions = TabCompleterUtil.getCompletions(args[0], tmp);
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("invite")) {
                 completions.addAll(TabCompleterUtil.getPlayers(args[1], player.hasPermission("vanillatowns.vanish")));
-            } else if (args[0].equalsIgnoreCase("join")) {
-                if (plugin.hasInvite(player)) {
-                    List<String> tmp = new ArrayList<>();
-                    plugin.getInvites(player).forEach(town -> tmp.add(town.getName()));
-                    completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
-                }
             } else if (args[0].equalsIgnoreCase("kick")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
@@ -823,7 +1061,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     }
                 }
             } else if (args[0].equalsIgnoreCase("give")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
@@ -837,7 +1075,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             }
         } else if (args.length == 3) {
             if (args[1].equalsIgnoreCase("setadmin")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
@@ -846,7 +1084,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     }
                 }
             } else if (args[1].equalsIgnoreCase("deladmin")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
@@ -855,7 +1093,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     }
                 }
             } else if (args[1].equals("deposit")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player)) {
                         List<String> tmp = new ArrayList<>();
@@ -864,11 +1102,11 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     }
                 }
             } else if (args[1].equals("withdraw")) {
-                Town town = towns.getTown(player);
+                Town town = towns.getTown(player, null);
                 if (town != null) {
                     if (town.isLeader(player)) {
                         List<String> tmp = new ArrayList<>();
-                        town.getMembers().forEach(member -> completions.add(member.getName()));
+                        town.getMembers().forEach(member -> tmp.add(member.getName()));
                         completions.addAll(TabCompleterUtil.getCompletions(args[2], tmp));
                     }
                 }

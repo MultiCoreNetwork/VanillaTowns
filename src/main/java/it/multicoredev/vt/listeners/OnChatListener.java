@@ -1,17 +1,17 @@
 package it.multicoredev.vt.listeners;
 
-import it.multicoredev.mbcore.spigot.Chat;
-import it.multicoredev.mclib.yaml.Configuration;
-import it.multicoredev.vt.storage.Town;
-import it.multicoredev.vt.storage.Towns;
+import it.multicoredev.vt.storage.towns.Town;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
+import static it.multicoredev.vt.VanillaTowns.config;
+import static it.multicoredev.vt.VanillaTowns.towns;
+
 /**
- * Copyright © 2020 by Lorenzo Magni
+ * Copyright © 2020 - 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -31,29 +31,26 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class OnChatListener implements Listener {
-    private final Configuration config;
-    private final Towns towns;
-
-    public OnChatListener(Configuration config, Towns towns) {
-        this.config = config;
-        this.towns = towns;
-    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        Town town = towns.getTown(player);
-        String color = "";
-        boolean addSpaces = config.getBoolean("add-spaces-to-town-name");
+        Town town = towns.getTown(player, null);
+
+        String format = event.getFormat();
 
         if (town != null) {
-            if (town.isLeader(player)) color = config.getString("colors.leader");
-            else if (town.isAdmin(player)) color = config.getString("colors.admin");
-            else color = config.getString("colors.member");
+            String color;
+            if (town.isLeader(player)) color = config.colors.leader;
+            else if (town.isAdmin(player)) color = config.colors.admin;
+            else color = config.colors.member;
+
+            format = format.replace("{TOWN}", color + town.getName() + "&r");
+        } else {
+            format = format.replace(" {TOWN} ", "")
+                    .replace("{TOWN}", "");
         }
 
-        event.setFormat(event.getFormat()
-                .replace("{TOWN}", town == null ? (addSpaces ? " " : "") :
-                        (addSpaces ? " " : "") + Chat.getTranslated(color + town.getName() )+ (addSpaces ? " " : "")));
+        event.setFormat(format);
     }
 }

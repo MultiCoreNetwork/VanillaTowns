@@ -1,13 +1,9 @@
 package it.multicoredev.vt.storage;
 
-import org.bukkit.entity.Player;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Field;
 
 /**
- * Copyright © 2020 by Lorenzo Magni
+ * Copyright © 2020 - 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -26,55 +22,26 @@ import java.util.List;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class Towns {
-    private final List<Town> towns = new ArrayList<>();
-    private int lastId = -1;
+public abstract class JsonConfig {
 
-    public int getFirstId() {
-        return lastId++;
-    }
+    protected abstract void initValues();
 
-    public void addTown(Town town) {
-        towns.add(town);
-    }
+    public boolean completeMissing() {
+        boolean completed = false;
 
-    public void removeTown(Town town) {
-        towns.remove(town);
-    }
-
-    public Town getTown(Player player) {
-        for (Town town : towns) {
-            for (TownMember member : town.getMembers()) {
-                if (member.equals(player)) return town;
+        for (Field field : getClass().getDeclaredFields()) {
+            try {
+                Object obj = field.get(this);
+                if (obj == null) completed = true;
+                else if (JsonConfig.class.isAssignableFrom(field.getType())) {
+                    boolean childCompleted = ((JsonConfig) obj).completeMissing();
+                    if (childCompleted) completed = true;
+                }
+            } catch (IllegalAccessException ignored) {
             }
         }
 
-        return null;
-    }
-
-    public Town getTown(String name) {
-        for (Town town : towns) {
-            if (town.getName().toLowerCase().equals(name.toLowerCase())) return town;
-        }
-
-        return null;
-    }
-
-    public boolean hasTown(Player player) {
-        return getTown(player) != null;
-    }
-
-    public boolean townExists(String name) {
-        for (Town town : towns) {
-            if (town.getName().toLowerCase().equals(name.toLowerCase())) return true;
-        }
-
-        return false;
-    }
-
-    public List<Town> getTowns() {
-        List<Town> t = new ArrayList<>(towns);
-        Collections.sort(t);
-        return t;
+        if (completed) initValues();
+        return completed;
     }
 }

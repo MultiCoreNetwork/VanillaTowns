@@ -1,12 +1,11 @@
-package it.multicoredev.vt.storage;
+package it.multicoredev.vt.storage.towns;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
 /**
- * Copyright © 2020 by Lorenzo Magni
+ * Copyright © 2020 - 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -26,7 +25,7 @@ import java.util.UUID;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class TownMember {
-    private String uuid;
+    private final String uuid;
     private String name;
     private boolean leader;
     private boolean admin;
@@ -46,66 +45,48 @@ public class TownMember {
         return UUID.fromString(uuid);
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public TownMember setName(String name) {
         this.name = name;
+        return this;
     }
 
     public boolean isLeader() {
         return leader;
     }
 
-    public void setLeader(boolean leader) {
+    public TownMember setLeader(boolean leader) {
         this.leader = leader;
+        return this;
     }
 
     public boolean isAdmin() {
         return admin;
     }
 
-    public void setAdmin(boolean admin) {
+    public TownMember setAdmin(boolean admin) {
         this.admin = admin;
+        return this;
     }
 
     public boolean canDeposit() {
         return deposit;
     }
 
-    public void setDeposit(boolean deposit) {
+    public TownMember setDeposit(boolean deposit) {
         this.deposit = deposit;
+        return this;
     }
 
     public boolean canWithdraw() {
         return withdraw;
     }
 
-    public void setWithdraw(boolean withdraw) {
+    public TownMember setWithdraw(boolean withdraw) {
         this.withdraw = withdraw;
-    }
-
-    public Player getPlayer() {
-        return Bukkit.getPlayer(getUuid());
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Player) {
-            return getUuid().equals(((Player) obj).getUniqueId());
-        } else if (obj instanceof UUID) {
-            return getUuid().equals(obj);
-        } else if (obj instanceof String) {
-            return getName().equals(obj);
-        } else if (obj instanceof TownMember) {
-            return uuid.equals(((TownMember) obj).uuid);
-        }
-
-        return false;
+        return this;
     }
 }

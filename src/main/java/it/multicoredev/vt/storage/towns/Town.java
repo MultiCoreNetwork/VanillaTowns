@@ -1,15 +1,18 @@
-package it.multicoredev.vt.storage;
+package it.multicoredev.vt.storage.towns;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
- * Copyright © 2020 by Lorenzo Magni
+ * Copyright © 2020 - 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -29,18 +32,16 @@ import java.util.List;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class Town implements Comparable<Town> {
-    private int id;
+    private final int id;
     private String name;
     private double balance;
-    private String world;
-    private double x;
-    private double y;
-    private double z;
-    private final List<TownMember> members = new ArrayList<>();
+    private TownHome home;
+    private final List<TownMember> members;
 
     public Town(int id, String name, Player leader) {
         this.id = id;
         this.name = name;
+        this.members = new ArrayList<>();
         this.members.add(new TownMember(leader, true));
     }
 
@@ -52,39 +53,27 @@ public class Town implements Comparable<Town> {
         return name;
     }
 
-    public void setName(String name) {
+    public Town setName(String name) {
         this.name = name;
+        return this;
     }
 
     public double getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
-        this.balance = balance;
-    }
-
-    public void addBalance(double amount) {
+    public Town addBalance(double amount) {
         balance += amount;
+        return this;
     }
 
-    public Location getHomeLocation() {
-        if (world == null || world.equals("")) return null;
-        return new Location(Bukkit.getWorld(world), x, y, z);
+    public TownHome getHome() {
+        return home;
     }
 
-    public void setHomeLocation(Location location) {
-        if (location == null) {
-            world = "";
-            x = 0;
-            y = 0;
-            z = 0;
-        } else {
-            world = location.getWorld().getName();
-            x = location.getX();
-            y = location.getY();
-            z = location.getZ();
-        }
+    public Town setHome(TownHome home) {
+        this.home = home;
+        return this;
     }
 
     public List<TownMember> getMembers() {
@@ -119,7 +108,15 @@ public class Town implements Comparable<Town> {
 
     public TownMember getMember(Player player) {
         for (TownMember member : members) {
-            if (member.equals(player)) return member;
+            if (member.getUuid().equals(player.getUniqueId())) return member;
+        }
+
+        return null;
+    }
+
+    public TownMember getMember(UUID uuid) {
+        for (TownMember member : members) {
+            if (member.getUuid().equals(uuid)) return member;
         }
 
         return null;
@@ -127,7 +124,7 @@ public class Town implements Comparable<Town> {
 
     public TownMember getMember(String name) {
         for (TownMember member : members) {
-            if (member.equals(name)) return member;
+            if (member.getName().equalsIgnoreCase(name)) return member;
         }
 
         return null;
@@ -138,31 +135,107 @@ public class Town implements Comparable<Town> {
     }
 
     public void removeMember(String name) {
-        members.removeIf(member -> member.equals(name));
+        members.removeIf(member -> member.getName().equalsIgnoreCase(name));
     }
 
-    public boolean hasMember(String name) {
-        for (TownMember member : members) {
-            if (member.equals(name)) return true;
-        }
+    public void removeMember(UUID uuid) {
+        members.removeIf(members -> members.getUuid().equals(uuid));
+    }
 
-        return false;
+    public boolean isMember(Player player) {
+        return getMember(player) != null;
+    }
+
+    public boolean isMember(String name) {
+        return getMember(name) != null;
     }
 
     public boolean isLeader(Player player) {
         TownMember member = getMember(player);
-        if (member == null) return false;
-        return member.isLeader();
+        return member != null && member.isLeader();
+    }
+
+    public boolean isLeader(UUID uuid) {
+        TownMember member = getMember(uuid);
+        return member != null && member.isLeader();
+    }
+
+    public boolean isLeader(String name) {
+        TownMember member = getMember(name);
+        return member != null && member.isLeader();
     }
 
     public boolean isAdmin(Player player) {
         TownMember member = getMember(player);
+        return member != null && member.isAdmin();
+    }
+
+    public boolean isAdmin(UUID uuid) {
+        TownMember member = getMember(uuid);
+        return member != null && member.isAdmin();
+    }
+
+    public String getAdminNames() {
+        List<TownMember> admins = getAdmins();
+        if (admins.size() == 0) return "[]";
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < admins.size(); i++) {
+            builder.append(admins.get(i).getName());
+            if (i < admins.size() - 1) builder.append(", ");
+        }
+
+        return "[" + builder.toString() + "]";
+    }
+
+    public String getSimpleMembersNames() {
+        List<TownMember> members = getSimpleMembers();
+        if (members.size() == 0) return "[]";
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < members.size(); i++) {
+            builder.append(members.get(i).getName());
+            if (i < members.size() - 1) builder.append(", ");
+        }
+
+        return "[" + builder.toString() + "]";
+    }
+
+    public List<Player> getOnlineMembers() {
+        List<Player> players = new ArrayList<>();
+
+        for (TownMember member : members) {
+            Player player = Bukkit.getPlayer(member.getUuid());
+            if (player != null) players.add(player);
+        }
+
+        return players;
+    }
+
+    public boolean canDeposit(Player player) {
+        TownMember member = getMember(player);
         if (member == null) return false;
-        return member.isAdmin();
+
+        return member.isLeader() || member.isAdmin() || member.canDeposit();
+    }
+
+    public boolean canWithdraw(Player player) {
+        TownMember member = getMember(player);
+        if (member == null) return false;
+
+        return member.isLeader() || member.isAdmin() || member.canWithdraw();
     }
 
     @Override
     public int compareTo(@NotNull Town town) {
         return Double.compare(town.getBalance(), getBalance());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Town town = (Town) o;
+        return id == town.id && Objects.equals(name, town.name);
     }
 }
