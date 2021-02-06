@@ -3,6 +3,7 @@ package it.multicoredev.vt.commands;
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.User;
 import it.multicoredev.mbcore.spigot.Chat;
+import it.multicoredev.mbcore.spigot.util.TabCompleterUtil;
 import it.multicoredev.vt.Utils;
 import it.multicoredev.vt.VanillaTowns;
 import it.multicoredev.vt.storage.towns.Town;
@@ -17,6 +18,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static it.multicoredev.vt.VanillaTowns.config;
@@ -528,6 +530,51 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return null;
+        if (!hasStaffPermission(sender, "vanillatowns.staff")) return null;
+
+        List<String> completions = new ArrayList<>();
+        if (args.length == 1) {
+            List<String> tmp = new ArrayList<>();
+
+            if (hasStaffPermission(sender, "vanillatowns.reload")) tmp.add("reload");
+            if (hasStaffPermission(sender, "vanillatowns.invite")) tmp.add("invite");
+            if (hasStaffPermission(sender, "vanillatowns.join")) tmp.add("join");
+            if (hasStaffPermission(sender, "vanillatowns.kick")) tmp.add("kick");
+            if (hasStaffPermission(sender, "vanillatowns.rename")) tmp.add("rename");
+            if (hasStaffPermission(sender, "vanillatowns.delete")) tmp.add("delete");
+            if (hasStaffPermission(sender, "vanillatowns.roles")) {
+                tmp.add("setLeader");
+                tmp.add("setAdmin");
+                tmp.add("setMember");
+            }
+            if (hasStaffPermission(sender, "vanillatowns.home")) tmp.add("home");
+            if (hasStaffPermission(sender, "vanillatowns.home.edit")) {
+                tmp.add("setHome");
+                tmp.add("delHome");
+            }
+
+            completions = TabCompleterUtil.getCompletions(args[0], tmp);
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("invite") ||
+                    args[0].equalsIgnoreCase("join") ||
+                    args[0].equalsIgnoreCase("kick") ||
+                    args[0].equalsIgnoreCase("setLeader") ||
+                    args[0].equalsIgnoreCase("setAdmin") ||
+                    args[0].equalsIgnoreCase("setMember")) {
+                completions = new ArrayList<>(TabCompleterUtil.getPlayers(args[1], sender.hasPermission("vanillatowns.vanish")));
+            } else if (args[0].equalsIgnoreCase("rename") ||
+                    args[0].equalsIgnoreCase("delete") ||
+                    args[0].equalsIgnoreCase("setHome") ||
+                    args[0].equalsIgnoreCase("home") ||
+                    args[0].equalsIgnoreCase("delHome")) {
+
+                List<String> tmp = new ArrayList<>();
+                towns.getTowns().forEach(t -> tmp.add(t.getName()));
+
+                completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], tmp));
+            }
+        }
+
+        return completions;
     }
 }

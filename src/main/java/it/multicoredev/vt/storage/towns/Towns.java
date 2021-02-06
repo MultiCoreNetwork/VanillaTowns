@@ -37,7 +37,7 @@ public class Towns {
     }
 
     public int getFirstId() {
-        return lastId++;
+        return ++lastId;
     }
 
     public Town getTown(Player player, Town def) {

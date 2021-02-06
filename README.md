@@ -88,7 +88,7 @@ all the strings and the messages of the plugin.
 **One important thing:** like all my plugins, this plugin uses [MBCore](https://github.com/MultiCoreNetwork/MBCore) as a
 library. With MBCore you can do some cool things in your config like using all hexadecimal colors (only Minecraft 1.16+)
 in strings simply by replacing the adding`#ab01cd` instead of `&c` colors. You can use both at the same time. You can
-also use json formatted messages (the ones used in tellraw command) by simply putting `\j` at the start of the message 
+also use json formatted messages (the ones used in tellraw command) by simply putting `!j` at the start of the message 
 (You can find an example of this in the default config).
 
 ## Download

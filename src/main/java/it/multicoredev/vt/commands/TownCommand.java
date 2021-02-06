@@ -71,7 +71,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         }
 
         if (args.length < 1) {
-            help(player);
+            town(player, null);
             return true;
         }
 
@@ -287,6 +287,11 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         if (!hasPermission(target, "vanillatowns.join")) {
             Chat.send(config.strings.cannotInvite, player);
+            return;
+        }
+
+        if (town.isMember(target)) {
+            Chat.send(config.strings.alreadyInYourTown, player);
             return;
         }
 
@@ -1049,7 +1054,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
             completions = TabCompleterUtil.getCompletions(args[0], tmp);
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("invite")) {
-                completions.addAll(TabCompleterUtil.getPlayers(args[1], player.hasPermission("vanillatowns.vanish")));
+                completions = new ArrayList<>(TabCompleterUtil.getPlayers(args[1], player.hasPermission("vanillatowns.vanish")));
             } else if (args[0].equalsIgnoreCase("kick")) {
                 Town town = towns.getTown(player, null);
                 if (town != null) {
@@ -1057,7 +1062,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                         List<String> tmp = new ArrayList<>();
                         town.getAdmins().forEach(member -> tmp.add(member.getName()));
                         town.getMembers().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[0].equalsIgnoreCase("give")) {
@@ -1067,11 +1072,11 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                         List<String> tmp = new ArrayList<>();
                         town.getAdmins().forEach(member -> tmp.add(member.getName()));
                         town.getMembers().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[0].equalsIgnoreCase("user")) {
-                completions.addAll(TabCompleterUtil.getCompletions(args[1], Arrays.asList("setAdmin", "delAdmin", "deposit", "withdraw")));
+                completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], Arrays.asList("setAdmin", "delAdmin", "deposit", "withdraw")));
             }
         } else if (args.length == 3) {
             if (args[1].equalsIgnoreCase("setadmin")) {
@@ -1080,7 +1085,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
                         town.getMembers().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[1].equalsIgnoreCase("deladmin")) {
@@ -1089,7 +1094,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     if (town.isLeader(player) || town.isAdmin(player)) {
                         List<String> tmp = new ArrayList<>();
                         town.getAdmins().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[1], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[1], tmp));
                     }
                 }
             } else if (args[1].equals("deposit")) {
@@ -1098,7 +1103,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     if (town.isLeader(player)) {
                         List<String> tmp = new ArrayList<>();
                         town.getMembers().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[2], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[2], tmp));
                     }
                 }
             } else if (args[1].equals("withdraw")) {
@@ -1107,15 +1112,15 @@ public class TownCommand implements CommandExecutor, TabExecutor {
                     if (town.isLeader(player)) {
                         List<String> tmp = new ArrayList<>();
                         town.getMembers().forEach(member -> tmp.add(member.getName()));
-                        completions.addAll(TabCompleterUtil.getCompletions(args[2], tmp));
+                        completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[2], tmp));
                     }
                 }
             }
         } else if (args.length == 4) {
             if (args[0].equals("user") && args[1].equals("deposit")) {
-                completions.addAll(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
+                completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
             } else if (args[0].equals("user") && args[1].equals("withdraw")) {
-                completions.addAll(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
+                completions = new ArrayList<>(TabCompleterUtil.getCompletions(args[2], Arrays.asList("allow", "deny")));
             }
         }
 

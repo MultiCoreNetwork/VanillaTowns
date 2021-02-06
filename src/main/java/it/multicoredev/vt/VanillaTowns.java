@@ -7,7 +7,8 @@ import it.multicoredev.vt.commands.TownChatCommand;
 import it.multicoredev.vt.commands.TownCommand;
 import it.multicoredev.vt.commands.VanillaTownsCommand;
 import it.multicoredev.vt.listeners.OnChatListener;
-import it.multicoredev.vt.placeholders.VTPlaceholders;
+import it.multicoredev.vt.placeholders.MVdWPlaceholders;
+import it.multicoredev.vt.placeholders.PAPIPlaceholders;
 import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Towns;
 import net.milkbowl.vault.economy.Economy;
@@ -72,7 +73,13 @@ public class VanillaTowns extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new OnChatListener(), this);
 
-        new VTPlaceholders(this);
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new PAPIPlaceholders(this).register();
+        }
+
+        if (getServer().getPluginManager().isPluginEnabled("MVdWPlaceholderAPI")) {
+            MVdWPlaceholders.registerMVdWPlaceholders(this);
+        }
 
         Chat.info("&2VanillaTowns loaded and enabled!");
     }

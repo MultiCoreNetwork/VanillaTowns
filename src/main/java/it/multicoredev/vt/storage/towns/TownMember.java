@@ -37,7 +37,7 @@ public class TownMember {
         this.name = player.getName();
         this.leader = leader;
         this.admin = false;
-        this.deposit = true;
+        this.deposit = !leader;
         this.withdraw = false;
     }
 

@@ -100,6 +100,8 @@ public class Config extends JsonConfig {
         public String alreadyInTown;
         @SerializedName("already_in_town_staff")
         public String alreadyInTownStaff;
+        @SerializedName("already_in_your_town")
+        public String alreadyInYourTown;
         @SerializedName("balance_chargeback")
         public String balanceChargeback;
         public String baltop;
@@ -246,6 +248,7 @@ public class Config extends JsonConfig {
             if (allowPlayerWithdrawTarget == null) allowPlayerWithdrawTarget = "&bYou can't deposit anymore to town bank.";
             if (alreadyInTown == null) alreadyInTown = "&cYou are already in a town.";
             if (alreadyInTownStaff == null) alreadyInTownStaff = "&cPlayer is already in a town.";
+            if (alreadyInYourTown == null) alreadyInYourTown = "&cThis player is already in your town.";
             if (balanceChargeback == null) balanceChargeback = "&e{money} &b added to your balance from your town bank.";
             if (baltop == null) baltop = "&e{position}. &b&l{town} &r- &e{balance}";
             if (baltopHead == null) baltopHead = "&7&m------&e Towns &7&m------";
@@ -265,7 +268,7 @@ public class Config extends JsonConfig {
             if (jailed == null) jailed = "&cYou are jailed.";
             if (leader == null) leader = "Leader";
             if (leaderTransfer == null) leaderTransfer = "&e{player} &bis now the leader of your town.";
-            if (leaderTransferStaff == null) leaderTransferStaff = "&e{player} &bis not hte leader of town &e{town}&b.";
+            if (leaderTransferStaff == null) leaderTransferStaff = "&e{player} &bis now the leader of town &e{town}&b.";
             if (leaveDenied == null) leaveDenied = "&cAs a leader you cannot leave the town. You can delete it of give it to someone else.";
             if (member == null) member = "Member";
             if (nameNotAvailable == null) nameNotAvailable = "&cTown name not available.";
@@ -283,7 +286,7 @@ public class Config extends JsonConfig {
             if (notSet == null) notSet = "Not set";
             if (notToTheLeader == null) notToTheLeader = "&cThis operation cannot be done on the leader of the town";
             if (playerAddedToTown == null) playerAddedToTown = "&e{player} &bhas been added to town &e{town}&b.";
-            if (playerInviteReceived == null) playerInviteReceived = "\\j[\"\",{\"text\":\"------------\",\"color\":\"dark_aqua\"},{\"text\":\"\\n\"},{\"text\":\"You have been invited to \",\"color\":\"aqua\"},{\"text\":\"{town}\",\"color\":\"yellow\"},{\"text\":\" by \",\"color\":\"aqua\"},{\"text\":\"{player}\",\"color\":\"yellow\"},{\"text\":\".\\nClick \",\"color\":\"aqua\"},{\"text\":\"here\",\"color\":\"yellow\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/town join\"}},{\"text\":\" to accept the invite.\",\"color\":\"aqua\"},{\"text\":\"\\n\"},{\"text\":\"------------\",\"color\":\"dark_aqua\"}]";
+            if (playerInviteReceived == null) playerInviteReceived = "!j[{'text':'------------------------','color':'dark_aqua'},{'text':'\\n'},{'text':'You have been invited to ','color':'aqua'},{'text':'{town}','color':'yellow'},{'text':' by ','color':'aqua'},{'text':'{player}','color':'yellow'},{'text':'.\\nClick ','color':'aqua'},{'text':'here','color':'yellow','clickEvent':{'action':'run_command','value':'/town join'}},{'text':' to accept the invite.','color':'aqua'},{'text':'\\n'},{'text':'------------------------','color':'dark_aqua'}]";
             if (playerInviteSent == null) playerInviteSent = "&bYou invited &e{player} &bto join your town.";
             if (playerJoin == null) playerJoin = "&bYou joined the town &e{town}&b.";
             if (playerJoinMembers == null) playerJoinMembers = "&e{player} &bjoined your town.";
@@ -356,11 +359,22 @@ public class Config extends JsonConfig {
                     "&b/town user deposit <player> deny &f- &eRevoke the permission to deposit money",
                     "&b/town user withdraw <player> allow &f- &eGrant the permission to withdraw money",
                     "&b/town user withdraw <player> deny &f- &eRevoke the permission to withdraw money",
-                    "&b/townchat <message> &f- &eSend a message to all members of your town",
-                    "&7&m----&r &e&lTown Command&r &7&m----"
+                    "&b/townchat <message> &f- &eSend a message to all members of your town"
             );
             if (staffHelpMessage == null) staffHelpMessage = Arrays.asList(
-
+                    "&7&m----&r &e&lVanilla Towns&r &7&m----",
+                    "&b/vanillatowns reload &f- &eReload the plugin.",
+                    "&b/vanillatowns invite <player> <town> &f- &eInvite a player to join a town.",
+                    "&b/vanillatowns join <player> <town> &f- &eAdd a player to a town.",
+                    "&b/vanillatowns kick <player> <town> &f- &eKick a player from a town.",
+                    "&b/vanillatowns rename <name> <town> &f- &eRename a town.",
+                    "&b/vanillatowns delete <town> &f- &eDelete a town.",
+                    "&b/vanillatowns setLeader <player> <town> &f- &ePromote a player to town leader.",
+                    "&b/vanillatowns setAdmin <player> <town> &f- &ePromote a player to town admin.",
+                    "&b/vanillatowns setMember <player> <town> &f- &eDemote an admin to simple member.",
+                    "&b/vanillatowns setHome <town> &f- &eSet the town home of a town.",
+                    "&b/vanillatowns home <town> &f- &eTeleport to the town home of a town.",
+                    "&b/vanillatowns delHome <town> &f- &eDelete the town home of a town."
             );
         }
     }

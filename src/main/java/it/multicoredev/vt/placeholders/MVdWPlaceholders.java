@@ -1,18 +1,12 @@
-package it.multicoredev.vt.listeners;
+package it.multicoredev.vt.placeholders;
 
-import it.multicoredev.mbcore.spigot.Chat;
-import it.multicoredev.vt.storage.towns.Town;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import be.maximvdw.placeholderapi.PlaceholderAPI;
+import org.bukkit.plugin.Plugin;
 
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
+import static it.multicoredev.vt.placeholders.PlaceholdersUtils.*;
 
 /**
- * Copyright © 2020 - 2021 by Lorenzo Magni
+ * Copyright © 2021 by Lorenzo Magni
  * This file is part of VanillaTowns.
  * VanillaTowns is under "The 3-Clause BSD License", you can find a copy <a href="https://opensource.org/licenses/BSD-3-Clause">here</a>.
  * <p>
@@ -31,27 +25,24 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-public class OnChatListener implements Listener {
+public class MVdWPlaceholders {
+    public static void registerMVdWPlaceholders(Plugin plugin) {
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_name", e -> getTownName(e.getPlayer().getUniqueId()));
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        Town town = towns.getTown(player, null);
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_balance", e -> getTownBalance(e.getPlayer().getUniqueId()));
 
-        String format = event.getFormat();
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_role", e -> getTownRole(e.getPlayer().getUniqueId()));
 
-        if (town != null) {
-            String color;
-            if (town.isLeader(player)) color = config.colors.leader;
-            else if (town.isAdmin(player)) color = config.colors.admin;
-            else color = config.colors.member;
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_role_color", e -> getTownRoleColor(e.getPlayer().getUniqueId()));
 
-            format = format.replace("{TOWN}", Chat.getTranslated(color + town.getName() + "&r"));
-        } else {
-            format = format.replace(" {TOWN} ", " ")
-                    .replace("{TOWN}", "");
-        }
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_w", e -> getTownHomeWorld(e.getPlayer().getUniqueId()));
 
-        event.setFormat(format);
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_x", e -> getTownHomeX(e.getPlayer().getUniqueId()));
+
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_y", e -> getTownHomeY(e.getPlayer().getUniqueId()));
+
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_z", e -> getTownHomeZ(e.getPlayer().getUniqueId()));
+
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_rank", e -> getTownRank(e.getPlayer().getUniqueId()));
     }
 }
