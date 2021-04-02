@@ -84,13 +84,13 @@ all the strings and the messages of the plugin.
 
 **One important thing:** like all my plugins, this plugin uses [MBCore](https://github.com/MultiCoreNetwork/MBCore) as a
 library. With MBCore you can do some cool things in your config like using all hexadecimal colors (only Minecraft 1.16+)
-in strings simply by replacing the adding`#ab01cd` instead of `&c` colors. You can use both at the same time. You can
+in strings simply by adding `#ab01cd` instead of `&c` colors. You can use both at the same time. You can
 also use json formatted messages (the ones used in tellraw command) by simply putting `!j` at the start of the message 
 (You can find an example of this in the default config).
 
 ## Download
 
-You can download this plugin [here](https://multicoredev.it/job/BungeeCompact/).
+You can download this plugin [here](https://www.spigotmc.org/resources/vanilla-towns.90837/).
 
 This plugin requires Vault to be installed. You can find Vault [here](https://www.spigotmc.org/resources/vault.34315).
 
