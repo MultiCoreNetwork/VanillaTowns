@@ -865,7 +865,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
         town.getMember(name).setAdmin(true);
         plugin.saveTowns();
 
-        Chat.send(config.strings.adminPromoted, player);
+        Chat.send(config.strings.adminPromoted.replace("{player}", name), player);
 
         Player target = Bukkit.getPlayer(name);
         if (target != null) Chat.send(config.strings.adminPromotedTarget, target);

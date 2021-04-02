@@ -30,14 +30,11 @@ give you the ability to integrate it in other plugins.
     * `vanillatowns.home` Gives the ability to teleport to the town home.
     * `vanillatowns.home.edit` Gives the ability to set/delete the town home (Must be the leader or an admin).
     * `vanillatowns.balance` Gives the ability to see the balance of the town.
-    * `vanillatowns.deposit` Gives the ability to deposit money to the town balance (Must be the leader or an admin or
-      have the permission).
-    * `vanillatowns.withdraw` Gives the ability to withdraw money from the town balance (Must be the leader or an admin
-      or have the permission).
+    * `vanillatowns.deposit` Gives the ability to deposit money to the town balance (Must be the leader or an admin or have the permission).
+    * `vanillatowns.withdraw` Gives the ability to withdraw money from the town balance (Must be the leader or an admin or have the permission).
     * `vanillatowns.chat` Gives the ability to use the town chat.
 * `vanillatowns.chat` Gives the ability to send messages in the town chat.
-* `vanillatowns.staff` Gives the ability to manage the towns (This permission is meant for the staff, it
-  inherits `vanillatowns.player` permissions).
+* `vanillatowns.staff` Gives the ability to manage the towns (This permission is meant for the staff, it inherits `vanillatowns.player` permissions).
     * `vanillatowns.staff.info` Gives the ability to see the town staff info.
     * `vanillatowns.staff.reload` Gives the ability to reload the plugin.
     * `vanillatowns.staff.invite` Gives the ability to invite a player to a town.

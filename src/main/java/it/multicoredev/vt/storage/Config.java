@@ -1,6 +1,7 @@
 package it.multicoredev.vt.storage;
 
 import com.google.gson.annotations.SerializedName;
+import it.multicoredev.mbcore.spigot.config.JsonConfig;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,11 +43,11 @@ public class Config extends JsonConfig {
     public Strings strings;
 
     public Config() {
-        initValues();
+        init();
     }
 
     @Override
-    protected void initValues() {
+    protected void init() {
         if (broadcastTownCreation == null) broadcastTownCreation = true;
         if (broadcastTownDeletion == null) broadcastTownDeletion = true;
         if (teleportTimer == null) teleportTimer = 5;
@@ -56,18 +57,17 @@ public class Config extends JsonConfig {
         if (strings == null) strings = new Strings();
     }
 
-
     public static class Colors extends JsonConfig {
         public String leader;
         public String admin;
         public String member;
 
         public Colors() {
-            initValues();
+            init();
         }
 
         @Override
-        protected void initValues() {
+        protected void init() {
             if (leader == null) leader = "&c";
             if (admin == null) admin = "&6";
             if (member == null) member = "&b";
@@ -230,11 +230,11 @@ public class Config extends JsonConfig {
         public List<String> staffHelpMessage;
 
         public Strings() {
-            initValues();
+            init();
         }
 
         @Override
-        protected void initValues() {
+        protected void init() {
             if (admin == null) admin = "Admin";
             if (adminDemoted == null) adminDemoted = "&e{player} &bis now a simple member.";
             if (adminDemotedStaff == null) adminDemotedStaff = "&e{player} &bis now a simple member of the town &e{town}&b.";
