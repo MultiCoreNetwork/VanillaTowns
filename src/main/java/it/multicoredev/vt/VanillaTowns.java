@@ -10,6 +10,7 @@ import it.multicoredev.vt.listeners.OnChatListener;
 import it.multicoredev.vt.placeholders.MVdWPlaceholders;
 import it.multicoredev.vt.placeholders.PAPIPlaceholders;
 import it.multicoredev.vt.storage.Config;
+import it.multicoredev.vt.storage.towns.Town;
 import it.multicoredev.vt.storage.towns.Towns;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.event.HandlerList;
@@ -18,6 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -41,9 +43,9 @@ import java.nio.charset.StandardCharsets;
  */
 public class VanillaTowns extends JavaPlugin {
     private static final Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
-    public static Economy eco;
-    public static Config config;
-    public static Towns towns;
+    static Economy eco;
+    private Config config;
+    private Towns towns;
     private File configFile;
     private File townsFile;
 
@@ -63,22 +65,22 @@ public class VanillaTowns extends JavaPlugin {
             return;
         }
 
-        TownCommand tCommand = new TownCommand(this);
+        TownCommand tCommand = new TownCommand(this, config, towns);
         getCommand("town").setExecutor(tCommand);
         getCommand("town").setTabCompleter(tCommand);
-        VanillaTownsCommand vtCommand = new VanillaTownsCommand(this);
+        VanillaTownsCommand vtCommand = new VanillaTownsCommand(this, config, towns);
         getCommand("vanillatowns").setExecutor(vtCommand);
         getCommand("vanillatowns").setTabCompleter(vtCommand);
-        getCommand("townchat").setExecutor(new TownChatCommand());
+        getCommand("townchat").setExecutor(new TownChatCommand(config, towns));
 
-        getServer().getPluginManager().registerEvents(new OnChatListener(), this);
+        getServer().getPluginManager().registerEvents(new OnChatListener(config, towns), this);
 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new PAPIPlaceholders(this).register();
+            new PAPIPlaceholders(this, config, towns).register();
         }
 
         if (getServer().getPluginManager().isPluginEnabled("MVdWPlaceholderAPI")) {
-            MVdWPlaceholders.registerMVdWPlaceholders(this);
+            MVdWPlaceholders.registerMVdWPlaceholders(this, config, towns);
         }
 
         Chat.info("&2VanillaTowns loaded and enabled!");
@@ -167,5 +169,9 @@ public class VanillaTowns extends JavaPlugin {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public Collection<Town> getTowns() {
+        return towns.getTowns();
     }
 }

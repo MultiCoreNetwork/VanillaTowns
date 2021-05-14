@@ -237,26 +237,33 @@ public class Config extends JsonConfig {
         protected void init() {
             if (admin == null) admin = "Admin";
             if (adminDemoted == null) adminDemoted = "&e{player} &bis now a simple member.";
-            if (adminDemotedStaff == null) adminDemotedStaff = "&e{player} &bis now a simple member of the town &e{town}&b.";
+            if (adminDemotedStaff == null)
+                adminDemotedStaff = "&e{player} &bis now a simple member of the town &e{town}&b.";
             if (adminDemotedTarget == null) adminDemotedTarget = "&bYou are now a simple member of your town.";
             if (adminPromoted == null) adminPromoted = "&e{player} &bis now an admin.";
             if (adminPromotedStaff == null) adminPromotedStaff = "&e{player} &bis now an admin of the town &e{town}&b.";
             if (adminPromotedTarget == null) adminPromotedTarget = "&bYou are now an admin in your town.";
             if (allowPlayerDeposit == null) allowPlayerDeposit = "&e{player} &bcan now deposit money to town bank.";
-            if (allowPlayerDepositTarget == null) allowPlayerDepositTarget = "&bYou can now deposit money to town bank.";
+            if (allowPlayerDepositTarget == null)
+                allowPlayerDepositTarget = "&bYou can now deposit money to town bank.";
             if (allowPlayerWithdraw == null) allowPlayerWithdraw = "&e{player} &bcan't deposit anymore to town bank.";
-            if (allowPlayerWithdrawTarget == null) allowPlayerWithdrawTarget = "&bYou can't deposit anymore to town bank.";
+            if (allowPlayerWithdrawTarget == null)
+                allowPlayerWithdrawTarget = "&bYou can't deposit anymore to town bank.";
             if (alreadyInTown == null) alreadyInTown = "&cYou are already in a town.";
             if (alreadyInTownStaff == null) alreadyInTownStaff = "&cPlayer is already in a town.";
             if (alreadyInYourTown == null) alreadyInYourTown = "&cThis player is already in your town.";
-            if (balanceChargeback == null) balanceChargeback = "&e{money} &b added to your balance from your town bank.";
+            if (balanceChargeback == null)
+                balanceChargeback = "&e{money} &b added to your balance from your town bank.";
             if (baltop == null) baltop = "&e{position}. &b&l{town} &r- &e{balance}";
             if (baltopHead == null) baltopHead = "&7&m------&e Towns &7&m------";
             if (baltopTail == null) baltopTail = "&7&m------&e Towns &7&m------";
             if (blacklistedDim == null) blacklistedDim = "&cYou cannot set your town home in this dimension.";
-            if (cannotDeposit == null) cannotDeposit = "&cYou don't have the permission to deposit money to your town bank.";
-            if (cannotInvite == null) cannotInvite = "&cYou can't invite that player. He/She hasn't the permission to join a town.";
-            if (cannotWithdraw == null) cannotWithdraw = "&cYou don't have the permission to withdraw money from your town bank.";
+            if (cannotDeposit == null)
+                cannotDeposit = "&cYou don't have the permission to deposit money to your town bank.";
+            if (cannotInvite == null)
+                cannotInvite = "&cYou can't invite that player. He/She hasn't the permission to join a town.";
+            if (cannotWithdraw == null)
+                cannotWithdraw = "&cYou don't have the permission to withdraw money from your town bank.";
             if (chatFormat == null) chatFormat = "&dTOWN: &6{player} &e>&r {message}";
             if (depositSuccess == null) depositSuccess = "&e{money} &bdeposited to your town bank.";
             if (homeFormat == null) homeFormat = "&6W: &e{world} &6X: &e{x} &6Y: &e{y} &6Z: &e{z}";
@@ -269,7 +276,8 @@ public class Config extends JsonConfig {
             if (leader == null) leader = "Leader";
             if (leaderTransfer == null) leaderTransfer = "&e{player} &bis now the leader of your town.";
             if (leaderTransferStaff == null) leaderTransferStaff = "&e{player} &bis now the leader of town &e{town}&b.";
-            if (leaveDenied == null) leaveDenied = "&cAs a leader you cannot leave the town. You can delete it of give it to someone else.";
+            if (leaveDenied == null)
+                leaveDenied = "&cAs a leader you cannot leave the town. You can delete it of give it to someone else.";
             if (member == null) member = "Member";
             if (nameNotAvailable == null) nameNotAvailable = "&cTown name not available.";
             if (noHome == null) noHome = "&cYour town doesn't have a home.";
@@ -286,7 +294,8 @@ public class Config extends JsonConfig {
             if (notSet == null) notSet = "Not set";
             if (notToTheLeader == null) notToTheLeader = "&cThis operation cannot be done on the leader of the town";
             if (playerAddedToTown == null) playerAddedToTown = "&e{player} &bhas been added to town &e{town}&b.";
-            if (playerInviteReceived == null) playerInviteReceived = "!j[{'text':'------------------------','color':'dark_aqua'},{'text':'\\n'},{'text':'You have been invited to ','color':'aqua'},{'text':'{town}','color':'yellow'},{'text':' by ','color':'aqua'},{'text':'{player}','color':'yellow'},{'text':'.\\nClick ','color':'aqua'},{'text':'here','color':'yellow','clickEvent':{'action':'run_command','value':'/town join'}},{'text':' to accept the invite.','color':'aqua'},{'text':'\\n'},{'text':'------------------------','color':'dark_aqua'}]";
+            if (playerInviteReceived == null)
+                playerInviteReceived = "!j[{'text':'------------------------','color':'dark_aqua'},{'text':'\\n'},{'text':'You have been invited to ','color':'aqua'},{'text':'{town}','color':'yellow'},{'text':' by ','color':'aqua'},{'text':'{player}','color':'yellow'},{'text':'.\\nClick ','color':'aqua'},{'text':'here','color':'yellow','clickEvent':{'action':'run_command','value':'/town join'}},{'text':' to accept the invite.','color':'aqua'},{'text':'\\n'},{'text':'------------------------','color':'dark_aqua'}]";
             if (playerInviteSent == null) playerInviteSent = "&bYou invited &e{player} &bto join your town.";
             if (playerJoin == null) playerJoin = "&bYou joined the town &e{town}&b.";
             if (playerJoinMembers == null) playerJoinMembers = "&e{player} &bjoined your town.";
@@ -305,7 +314,8 @@ public class Config extends JsonConfig {
             if (townDeletedBC == null) townDeletedBC = "&e{player} &bdeleted the town &e{town}&b.";
             if (townNotFound == null) townNotFound = "&cTown not found.";
             if (townRenamed == null) townRenamed = "&bYour town is now known as &e{town}&b.";
-            if (townRenamedBC == null) townRenamedBC = "&e{player} &brenamed the town &e{town_old} &b in &e{town_new}&b.";
+            if (townRenamedBC == null)
+                townRenamedBC = "&e{player} &brenamed the town &e{town_old} &b in &e{town_new}&b.";
             if (transactionError == null) transactionError = "&cTransaction error.";
             if (withdrawSuccess == null) withdrawSuccess = "&e{money} &bwithdrawn from your town bank.";
 

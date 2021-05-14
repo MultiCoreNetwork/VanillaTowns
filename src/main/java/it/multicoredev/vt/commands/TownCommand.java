@@ -6,9 +6,11 @@ import it.multicoredev.mbcore.spigot.Chat;
 import it.multicoredev.mbcore.spigot.util.TabCompleterUtil;
 import it.multicoredev.vt.Utils;
 import it.multicoredev.vt.VanillaTowns;
+import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Town;
 import it.multicoredev.vt.storage.towns.TownHome;
 import it.multicoredev.vt.storage.towns.TownMember;
+import it.multicoredev.vt.storage.towns.Towns;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -24,9 +26,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -50,10 +49,14 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  */
 public class TownCommand implements CommandExecutor, TabExecutor {
     private final VanillaTowns plugin;
+    private final Config config;
+    private final Towns towns;
     public static final ConcurrentMap<UUID, Integer> invites = new ConcurrentHashMap<>();
 
-    public TownCommand(VanillaTowns plugin) {
+    public TownCommand(VanillaTowns plugin, Config config, Towns towns) {
         this.plugin = plugin;
+        this.config = config;
+        this.towns = towns;
     }
 
     @Override
@@ -777,7 +780,7 @@ public class TownCommand implements CommandExecutor, TabExecutor {
 
         Location home = town.getHome().getLocation();
 
-        if (time <= 0  || hasStaffPermission(player, "vanillatowns.instanttp")) {
+        if (time <= 0 || hasStaffPermission(player, "vanillatowns.instanttp")) {
             player.teleport(home);
             return;
         }

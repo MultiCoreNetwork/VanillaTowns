@@ -1,14 +1,13 @@
 package it.multicoredev.vt.commands;
 
 import it.multicoredev.mbcore.spigot.Chat;
+import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Town;
+import it.multicoredev.vt.storage.towns.Towns;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -31,6 +30,13 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class TownChatCommand implements CommandExecutor {
+    private final Config config;
+    private final Towns towns;
+
+    public TownChatCommand(Config config, Towns towns) {
+        this.config = config;
+        this.towns = towns;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

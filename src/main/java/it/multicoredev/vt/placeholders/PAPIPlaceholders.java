@@ -1,11 +1,11 @@
 package it.multicoredev.vt.placeholders;
 
+import it.multicoredev.vt.storage.Config;
+import it.multicoredev.vt.storage.towns.Towns;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
-
-import static it.multicoredev.vt.placeholders.PlaceholdersUtils.*;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -29,9 +29,11 @@ import static it.multicoredev.vt.placeholders.PlaceholdersUtils.*;
  */
 public class PAPIPlaceholders extends PlaceholderExpansion {
     private final Plugin plugin;
+    private final PlaceholdersUtils utils;
 
-    public PAPIPlaceholders(Plugin plugin) {
+    public PAPIPlaceholders(Plugin plugin, Config config, Towns towns) {
         this.plugin = plugin;
+        this.utils = new PlaceholdersUtils(config, towns);
     }
 
     @Override
@@ -58,23 +60,23 @@ public class PAPIPlaceholders extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, @NotNull String identifier) {
         switch (identifier) {
             case "town_name":
-                return getTownName(player.getUniqueId());
+                return utils.getTownName(player.getUniqueId());
             case "town_balance":
-                return getTownBalance(player.getUniqueId());
+                return utils.getTownBalance(player.getUniqueId());
             case "town_role":
-                return getTownRole(player.getUniqueId());
+                return utils.getTownRole(player.getUniqueId());
             case "role_color":
-                return getTownRoleColor(player.getUniqueId());
+                return utils.getTownRoleColor(player.getUniqueId());
             case "town_home_w":
-                return getTownHomeWorld(player.getUniqueId());
+                return utils.getTownHomeWorld(player.getUniqueId());
             case "town_home_x":
-                return getTownHomeX(player.getUniqueId());
+                return utils.getTownHomeX(player.getUniqueId());
             case "town_home_y":
-                return getTownHomeY(player.getUniqueId());
+                return utils.getTownHomeY(player.getUniqueId());
             case "town_home_z":
-                return getTownHomeZ(player.getUniqueId());
+                return utils.getTownHomeZ(player.getUniqueId());
             case "town_rank":
-                return getTownRank(player.getUniqueId());
+                return utils.getTownRank(player.getUniqueId());
         }
 
         return null;

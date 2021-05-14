@@ -6,9 +6,11 @@ import it.multicoredev.mbcore.spigot.Chat;
 import it.multicoredev.mbcore.spigot.util.TabCompleterUtil;
 import it.multicoredev.vt.Utils;
 import it.multicoredev.vt.VanillaTowns;
+import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Town;
 import it.multicoredev.vt.storage.towns.TownHome;
 import it.multicoredev.vt.storage.towns.TownMember;
+import it.multicoredev.vt.storage.towns.Towns;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,9 +22,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -46,9 +45,13 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  */
 public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
     private final VanillaTowns plugin;
+    private final Config config;
+    private final Towns towns;
 
-    public VanillaTownsCommand(VanillaTowns plugin) {
+    public VanillaTownsCommand(VanillaTowns plugin, Config config, Towns towns) {
         this.plugin = plugin;
+        this.config = config;
+        this.towns = towns;
     }
 
     @Override
@@ -203,7 +206,8 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         String msg = config.strings.playerJoinMembers.replace("{player}", target.getDisplayName());
         for (Player member : town.getOnlineMembers()) Chat.send(msg, member);
 
-        if (config.logTowns) Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b added &e" + target.getDisplayName() + "&b to the town &e" + town.getName());
+        if (config.logTowns)
+            Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b added &e" + target.getDisplayName() + "&b to the town &e" + town.getName());
     }
 
     private void kick(CommandSender sender, String name, String townName) {
@@ -298,7 +302,8 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         if (town.getBalance() > 0) {
             Utils.giveMoney(leader.getUuid(), town.getBalance());
             Player target = Bukkit.getPlayer(leader.getUuid());
-            if (target != null) Chat.send(config.strings.balanceChargeback.replace("{money}", Utils.formatNumber(town.getBalance())), target);
+            if (target != null)
+                Chat.send(config.strings.balanceChargeback.replace("{money}", Utils.formatNumber(town.getBalance())), target);
         }
 
         String senderName = sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName();
@@ -366,7 +371,8 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         Player target = Bukkit.getPlayer(name);
         if (target != null) Chat.send(config.strings.adminPromotedTarget, target);
 
-        if (config.logTowns) Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b promoted &e" + name + "&b to town admin");
+        if (config.logTowns)
+            Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b promoted &e" + name + "&b to town admin");
     }
 
     private void setMember(CommandSender sender, String name, String townName) {
@@ -399,7 +405,8 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         Player target = Bukkit.getPlayer(name);
         if (target != null) Chat.send(config.strings.adminDemotedTarget, target);
 
-        if (config.logTowns) Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b demoted &e" + name + "&b to town admin");
+        if (config.logTowns)
+            Chat.info("&e" + (sender instanceof Player ? ((Player) sender).getDisplayName() : sender.getName()) + "&b demoted &e" + name + "&b to town admin");
     }
 
     private void setHome(CommandSender sender, String townName) {

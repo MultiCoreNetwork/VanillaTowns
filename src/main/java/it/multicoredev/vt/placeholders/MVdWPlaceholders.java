@@ -1,9 +1,9 @@
 package it.multicoredev.vt.placeholders;
 
 import be.maximvdw.placeholderapi.PlaceholderAPI;
+import it.multicoredev.vt.storage.Config;
+import it.multicoredev.vt.storage.towns.Towns;
 import org.bukkit.plugin.Plugin;
-
-import static it.multicoredev.vt.placeholders.PlaceholdersUtils.*;
 
 /**
  * Copyright © 2021 by Lorenzo Magni
@@ -26,23 +26,25 @@ import static it.multicoredev.vt.placeholders.PlaceholdersUtils.*;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class MVdWPlaceholders {
-    public static void registerMVdWPlaceholders(Plugin plugin) {
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_name", e -> getTownName(e.getPlayer().getUniqueId()));
+    public static void registerMVdWPlaceholders(Plugin plugin, Config config, Towns towns) {
+        PlaceholdersUtils utils = new PlaceholdersUtils(config, towns);
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_balance", e -> getTownBalance(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_name", e -> utils.getTownName(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_role", e -> getTownRole(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_balance", e -> utils.getTownBalance(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_role_color", e -> getTownRoleColor(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_role", e -> utils.getTownRole(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_w", e -> getTownHomeWorld(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_role_color", e -> utils.getTownRoleColor(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_x", e -> getTownHomeX(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_w", e -> utils.getTownHomeWorld(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_y", e -> getTownHomeY(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_x", e -> utils.getTownHomeX(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_z", e -> getTownHomeZ(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_y", e -> utils.getTownHomeY(e.getPlayer().getUniqueId()));
 
-        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_rank", e -> getTownRank(e.getPlayer().getUniqueId()));
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_home_z", e -> utils.getTownHomeZ(e.getPlayer().getUniqueId()));
+
+        PlaceholderAPI.registerPlaceholder(plugin, "vt_town_rank", e -> utils.getTownRank(e.getPlayer().getUniqueId()));
     }
 }

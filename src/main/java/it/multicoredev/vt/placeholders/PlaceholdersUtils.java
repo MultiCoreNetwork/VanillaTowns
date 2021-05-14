@@ -1,12 +1,11 @@
 package it.multicoredev.vt.placeholders;
 
 import it.multicoredev.vt.Utils;
+import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Town;
+import it.multicoredev.vt.storage.towns.Towns;
 
 import java.util.UUID;
-
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -29,21 +28,29 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class PlaceholdersUtils {
-    public static String getTownName(UUID uuid) {
+    private final Config config;
+    private final Towns towns;
+
+    public PlaceholdersUtils(Config config, Towns towns) {
+        this.config = config;
+        this.towns = towns;
+    }
+
+    public String getTownName(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return config.strings.noTown;
 
         return town.getName();
     }
 
-    public static String getTownBalance(UUID uuid) {
+    public String getTownBalance(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return Utils.formatNumber(0);
 
         return Utils.formatNumber(town.getBalance());
     }
 
-    public static String getTownRole(UUID uuid) {
+    public String getTownRole(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return config.strings.noRole;
 
@@ -52,7 +59,7 @@ public class PlaceholdersUtils {
         else return config.strings.member;
     }
 
-    public static String getTownRoleColor(UUID uuid) {
+    public String getTownRoleColor(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return config.strings.noRole;
 
@@ -61,7 +68,7 @@ public class PlaceholdersUtils {
         else return config.colors.member;
     }
 
-    public static String getTownHomeWorld(UUID uuid) {
+    public String getTownHomeWorld(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return "";
         if (town.getHome() == null) return "";
@@ -69,7 +76,7 @@ public class PlaceholdersUtils {
         return town.getHome().getWorld();
     }
 
-    public static String getTownHomeX(UUID uuid) {
+    public String getTownHomeX(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return "";
         if (town.getHome() == null) return "";
@@ -77,7 +84,7 @@ public class PlaceholdersUtils {
         return String.valueOf(town.getHome().getX());
     }
 
-    public static String getTownHomeY(UUID uuid) {
+    public String getTownHomeY(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return "";
         if (town.getHome() == null) return "";
@@ -85,7 +92,7 @@ public class PlaceholdersUtils {
         return String.valueOf(town.getHome().getY());
     }
 
-    public static String getTownHomeZ(UUID uuid) {
+    public String getTownHomeZ(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return "";
         if (town.getHome() == null) return "";
@@ -93,7 +100,7 @@ public class PlaceholdersUtils {
         return String.valueOf(town.getHome().getZ());
     }
 
-    public static String getTownRank(UUID uuid) {
+    public String getTownRank(UUID uuid) {
         Town town = towns.getTown(uuid, null);
         if (town == null) return config.strings.noTown;
 

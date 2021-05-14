@@ -1,15 +1,14 @@
 package it.multicoredev.vt.listeners;
 
 import it.multicoredev.mbcore.spigot.Chat;
+import it.multicoredev.vt.storage.Config;
 import it.multicoredev.vt.storage.towns.Town;
+import it.multicoredev.vt.storage.towns.Towns;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-
-import static it.multicoredev.vt.VanillaTowns.config;
-import static it.multicoredev.vt.VanillaTowns.towns;
 
 /**
  * Copyright © 2020 - 2021 by Lorenzo Magni
@@ -32,6 +31,13 @@ import static it.multicoredev.vt.VanillaTowns.towns;
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 public class OnChatListener implements Listener {
+    private final Config config;
+    private final Towns towns;
+
+    public OnChatListener(Config config, Towns towns) {
+        this.config = config;
+        this.towns = towns;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(AsyncPlayerChatEvent event) {
