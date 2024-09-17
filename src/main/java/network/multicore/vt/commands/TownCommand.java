@@ -725,7 +725,7 @@ public class TownCommand implements BasicCommand {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("deposit-success", "amount", Utils.formatNumber(amount)), player);
+        Text.send(messages.getAndReplace("deposit-success", "amount", Utils.formatNumber(amount), "balance", Utils.formatNumber(town.getBalance())), player);
 
         Text.info("Player <aqua>" + player.getName() + "<reset> deposited <yellow>" + amount + "$<reset> to town <aqua>" + town.getName() + "<reset>");
     }
@@ -777,7 +777,7 @@ public class TownCommand implements BasicCommand {
             return;
         }
 
-        Text.send(messages.getAndReplace("withdraw-success", "amount", Utils.formatNumber(amount)), player);
+        Text.send(messages.getAndReplace("withdraw-success", "amount", Utils.formatNumber(amount), "balance", Utils.formatNumber(town.getBalance())), player);
 
         Text.info("Player <aqua>" + player.getName() + "<reset> withdrew <yellow>" + amount + "$<reset> from town <aqua>" + town.getName() + "<reset>");
     }

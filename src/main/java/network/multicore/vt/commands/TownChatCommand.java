@@ -79,7 +79,7 @@ public class TownChatCommand implements BasicCommand {
 
         Bukkit.getOnlinePlayers()
                 .stream()
-                .filter(p -> plugin.hasStaffPermission(p, "vanillatowns.socialspy"))
+                .filter(p -> plugin.hasStaffPermission(p, "vanillatowns.socialspy") && !town.getMembers().contains(town.getMember(p)))
                 .forEach(p -> Text.send(socialspy, p));
     }
 
