@@ -11,6 +11,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Optional;
 
 /**
@@ -79,8 +81,8 @@ public class PAPIPlaceholders extends PlaceholderExpansion {
             case "town_balance" -> {
                 Optional<Town> town = cache.getTown(player);
                 if (town.isEmpty()) town = townRepository.findByMember(player.getUniqueId());
-                if (town.isPresent()) yield Utils.formatNumber(town.get().getBalance());
-                yield Utils.formatNumber(0);
+                if (town.isPresent()) yield formatNumber(town.get().getBalance());
+                yield formatNumber(0);
             }
             case "town_role" -> {
                 Optional<Town> town = cache.getTown(player);
@@ -165,11 +167,24 @@ public class PAPIPlaceholders extends PlaceholderExpansion {
             case "town_name_fancy" -> {
                 Optional<Town> town = cache.getTown(player);
                 if (town.isEmpty()) town = townRepository.findByMember(player.getUniqueId());
-                if (town.isPresent()) yield config.getString("colors." + town.get().getName()) + " ";
+                if (town.isPresent()) yield (config.getString("colors." + town.get().getMember(player.getUniqueId()).getRole().getName()) + town.get().getName() + "<reset> ");
                 yield messages.get("no-town");
             }
-            default -> null;
+            default -> "";
         };
+    }
 
+    private static final NumberFormat DTS = new DecimalFormat("#0.00");
+    private static final String KILO = "K";
+    private static final String MEGA = "M";
+
+    public static String formatNumber(double d) {
+        if (d >= 1000000) {
+            return DTS.format(d / 1000000) + MEGA;
+        } else if (d >= 1000) {
+            return DTS.format(d / 1000) + KILO;
+        }
+
+        return DTS.format(d);
     }
 }

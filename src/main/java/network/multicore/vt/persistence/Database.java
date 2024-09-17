@@ -25,11 +25,14 @@ public class Database implements Closeable {
     private final EntityManager em;
 
     private Database(String persistenceUnitName, DataSourceProvider<?> dataSourceProvider, Entities entities, Properties properties, Map<String, Object> configuration) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(Database.class.getClassLoader());
         this.emf = PERSISTENCE_PROVIDER.createContainerEntityManagerFactory(
                 new PersistenceUnitInfoImpl(persistenceUnitName, entities.getEntityClassNames(), properties).setNonJtaDataSource(dataSourceProvider.getDataSource()),
                 configuration
         );
         this.em = emf.createEntityManager();
+        Thread.currentThread().setContextClassLoader(classLoader);
     }
 
     public <T, R extends EntityRepository<T, ?>> R createRepository(@NotNull Class<R> repositoryClass, @NotNull Class<T> entityClass) {

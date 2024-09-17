@@ -14,12 +14,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Cache {
     private static Cache instance;
-    private final VanillaTowns plugin;
     private final TownRepository townRepository;
     private final List<Town> towns = new CopyOnWriteArrayList<>();
 
     private Cache(VanillaTowns plugin) {
-        this.plugin = plugin;
         this.townRepository = plugin.townRepository();
     }
 
@@ -52,6 +50,10 @@ public class Cache {
 
         if (town == null) return;
         if (town.getMembers().stream().allMatch(member -> Bukkit.getPlayer(member.getUniqueId()) == null)) towns.remove(town);
+    }
+
+    public void addTown(Town town) {
+        towns.add(town);
     }
 
     public void removeTown(Town town) {

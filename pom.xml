@@ -167,10 +167,6 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
                                 <relocation>
-                                    <pattern>net.kyori</pattern>
-                                    <shadedPattern>network.multicore.vt.kyori</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>dev.dejvokep</pattern>
                                     <shadedPattern>network.multicore.vt.dejvokep</shadedPattern>
                                 </relocation>

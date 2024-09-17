@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("UnstableApiUsage")
 public class VanillaTownsLoader implements PluginLoader {
     private static final Gson GSON = new Gson();
 

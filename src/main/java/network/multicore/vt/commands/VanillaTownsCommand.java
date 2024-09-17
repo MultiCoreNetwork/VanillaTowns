@@ -1,6 +1,8 @@
 package network.multicore.vt.commands;
 
 import dev.dejvokep.boostedyaml.YamlDocument;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import network.multicore.vt.VanillaTowns;
 import network.multicore.vt.data.Town;
 import network.multicore.vt.data.TownMember;
@@ -11,21 +13,15 @@ import network.multicore.vt.utils.Messages;
 import network.multicore.vt.utils.TabCompleterUtil;
 import network.multicore.vt.utils.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
-public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
+@SuppressWarnings("UnstableApiUsage")
+public class VanillaTownsCommand implements BasicCommand {
     private final VanillaTowns plugin;
     private final Messages messages = Messages.get();
     private final Cache cache = Cache.get();
@@ -47,15 +43,17 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public void execute(@NotNull CommandSourceStack src, @NotNull String[] args) {
+        CommandSender sender = src.getSender();
+
         if (!sender.hasPermission("vanillatowns.staff")) {
             Text.send(messages.get("no-permission"), sender);
-            return true;
+            return;
         }
 
         if (args.length < 1) {
             help(sender);
-            return true;
+            return;
         }
 
         switch (args[0].toLowerCase()) {
@@ -106,8 +104,80 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
             }
             default -> help(sender);
         }
+    }
 
-        return true;
+    @Override
+    public @NotNull Collection<String> suggest(@NotNull CommandSourceStack src, @NotNull String[] args) {
+        CommandSender sender = src.getSender();
+
+        if (!plugin.hasStaffPermission(sender, "vanillatowns.staff")) return List.of();
+
+        List<String> completions = new ArrayList<>();
+
+        if (args.length == 0 || args.length == 1) {
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.reload")) completions.add("reload");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.invite")) completions.add("invite");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.join")) completions.add("join");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.kick")) completions.add("kick");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.rename")) completions.add("rename");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.delete")) completions.add("delete");
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.roles")) {
+                completions.add("setMayor");
+                completions.add("setOfficer");
+                completions.add("setCitizen");
+            }
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.home.edit")) {
+                completions.add("setHome");
+                completions.add("delHome");
+            }
+            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.home")) completions.add("home");
+        } else if (args.length == 2) {
+            switch (args[0].toLowerCase()) {
+                case "invite", "join", "kick", "rename", "delete", "setmayor", "setofficer", "setcitizen", "sethome", "delhome", "home" -> completions.addAll(townRepository.findAll()
+                        .stream()
+                        .map(Town::getName)
+                        .toList());
+
+            }
+        } else if (args.length == 3) {
+            switch (args[0].toLowerCase()) {
+                case "invite", "join" -> {
+                    Optional<Town> townOpt = townRepository.findByName(args[1]);
+                    townOpt.ifPresent(town -> completions.addAll(Bukkit.getOnlinePlayers()
+                            .stream()
+                            .map(Player::getName)
+                            .filter(p -> town.getMember(p) == null)
+                            .toList()));
+                }
+                case "kick", "setmayor" -> {
+                    Optional<Town> townOpt = townRepository.findByName(args[1]);
+                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
+                            .stream()
+                            .filter(m -> !m.getRole().equals(TownRole.MAYOR))
+                            .map(TownMember::getName)
+                            .toList()));
+                }
+                case "setofficer" -> {
+                    Optional<Town> townOpt = townRepository.findByName(args[1]);
+                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
+                            .stream()
+                            .filter(m -> !m.getRole().equals(TownRole.OFFICER) && !m.getRole().equals(TownRole.MAYOR))
+                            .map(TownMember::getName)
+                            .toList()));
+                }
+                case "setcitizen" -> {
+                    Optional<Town> townOpt = townRepository.findByName(args[1]);
+                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
+                            .stream()
+                            .filter(m -> !m.getRole().equals(TownRole.CITIZEN) && !m.getRole().equals(TownRole.MAYOR))
+                            .map(TownMember::getName)
+                            .toList()));
+                }
+            }
+        }
+
+        if (args.length > 0) return TabCompleterUtil.getCompletions(args[args.length - 1], completions);
+        else return completions;
     }
 
     private void help(CommandSender sender) {
@@ -158,8 +228,8 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
 
         VanillaTowns.INVITES.put(target.getUniqueId(), town.getId());
 
-        Text.send(messages.getAndReplace("invite-sent", "player", target.displayName()), sender);
-        Text.send(messages.getAndReplace("invite-received", "town", town.getName(), "player", sender instanceof Player player ? player.displayName() : messages.get("console")), target);
+        Text.send(messages.getAndReplace("invite-sent", "player", target), sender);
+        Text.send(messages.getAndReplace("invite-received", "town", town, "player", sender), target);
     }
 
     private void join(CommandSender sender, String townName, String playerName) {
@@ -199,15 +269,15 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
 
         if (config.getBoolean("broadcast.player-joined-town", false)) {
             Text.broadcast(messages.getAndReplace("player-joined-town-broadcast",
-                    "player", target.displayName(),
-                    "town", town.getName()));
+                    "player", target,
+                    "town", town));
         } else {
-            Text.send(messages.getAndReplace("player-joined-town-staff", "player", target.displayName(), "town", town.getName()), sender);
+            Text.send(messages.getAndReplace("player-joined-town-staff", "player", target, "town", town), sender);
             town.getMembers()
                     .stream()
                     .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                     .filter(Objects::nonNull)
-                    .forEach(p -> Text.send(messages.getAndReplace("player-joined-town-members", "player", target.displayName()), p));
+                    .forEach(p -> Text.send(messages.getAndReplace("player-joined-town-members", "player", target), p));
         }
 
         Text.info("Player <aqua>" + target.displayName() + "<reset> has been added to town <aqua>" + town.getName() + "<reset> by <aqua>" + sender.getName());
@@ -244,20 +314,20 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
 
         if (config.getBoolean("broadcast.player-left", false)) {
             Text.broadcast(messages.getAndReplace("player-kicked-from-town-broadcast",
-                    "player", sender instanceof Player player ? player.displayName() : messages.get("console"),
-                    "town", town.getName(),
-                    "target", member.getName()));
+                    "player", sender,
+                    "town", town,
+                    "target", member));
         } else {
-            Text.send(messages.getAndReplace("player-kicked-from-town-staff", "town", town.getName(), "player", member.getName()), sender);
+            Text.send(messages.getAndReplace("player-kicked-from-town-staff", "town", town, "player", member), sender);
             town.getMembers()
                     .stream()
                     .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                     .filter(Objects::nonNull)
-                    .forEach(p -> Text.send(messages.getAndReplace("player-kicked-from-town-members", "player", sender instanceof Player player ? player.displayName() : messages.get("console"), "target", member.getName()), p));
+                    .forEach(p -> Text.send(messages.getAndReplace("player-kicked-from-town-members", "player", sender, "target", member), p));
 
             Player target = Bukkit.getPlayer(member.getUniqueId());
             if (target != null) {
-                Text.send(messages.getAndReplace("kicked-from-town-target", "town", town.getName(), "player", sender instanceof Player player ? player.displayName() : messages.get("console")), target);
+                Text.send(messages.getAndReplace("kicked-from-town-target", "town", town, "player", sender), target);
             }
         }
 
@@ -296,7 +366,7 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         String finalName = newName;
         if (config.getBoolean("broadcast.town-renamed", false)) {
             Bukkit.getOnlinePlayers().forEach(p -> Text.send(messages.getAndReplace("town-renamed-broadcast",
-                    "player", sender instanceof Player player ? player.displayName() : messages.get("console"),
+                    "player", sender,
                     "old_name", oldName,
                     "new_name", finalName), p));
         } else {
@@ -335,7 +405,7 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
                     .stream()
                     .filter(Objects::nonNull)
                     .forEach(p -> Text.send(messages.getAndReplace("town-deleted-broadcast",
-                            "player", sender instanceof Player player ? player.displayName() : messages.get("console"),
+                            "player", sender,
                             "town", townName), p));
         }
 
@@ -366,12 +436,12 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("mayor-set-staff", "player", member.getName(), "town", town.getName()), sender);
+        Text.send(messages.getAndReplace("mayor-set-staff", "player", member, "town", town), sender);
         town.getMembers()
                 .stream()
                 .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                 .filter(Objects::nonNull)
-                .forEach(p -> Text.send(messages.getAndReplace("new-mayor", "player", member.getName()), p));
+                .forEach(p -> Text.send(messages.getAndReplace("new-mayor", "player", member), p));
 
         Text.info("Player <aqua>" + member.getName() + "<reset> has been set as mayor of town <aqua>" + town.getName() + "<reset> by <aqua>" + sender.getName());
     }
@@ -410,7 +480,7 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("officer-set-staff", "player", member.getName(), "town", town.getName()), sender);
+        Text.send(messages.getAndReplace("officer-set-staff", "player", member, "town", town), sender);
 
         Player target = Bukkit.getPlayer(member.getUniqueId());
         if (target != null) {
@@ -454,7 +524,7 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("citizen-set-staff", "player", member.getName(), "town", town.getName()), sender);
+        Text.send(messages.getAndReplace("citizen-set-staff", "player", member, "town", town), sender);
 
         Player target = Bukkit.getPlayer(member.getUniqueId());
         if (target != null) {
@@ -542,76 +612,5 @@ public class VanillaTownsCommand implements CommandExecutor, TabCompleter {
         player.teleport(town.getHome().getLocation().get());
 
         Text.send(messages.get("home-teleporting"), player);
-    }
-
-    @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!plugin.hasStaffPermission(sender, "vanillatowns.staff")) return List.of();
-
-        List<String> completions = new ArrayList<>();
-
-        if (args.length == 1) {
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.reload")) completions.add("reload");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.invite")) completions.add("invite");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.join")) completions.add("join");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.kick")) completions.add("kick");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.rename")) completions.add("rename");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.delete")) completions.add("delete");
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.roles")) {
-                completions.add("setMayor");
-                completions.add("setOfficer");
-                completions.add("setCitizen");
-            }
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.home.edit")) {
-                completions.add("setHome");
-                completions.add("delHome");
-            }
-            if (plugin.hasStaffPermission(sender, "vanillatowns.staff.home")) completions.add("home");
-        } else if (args.length == 2) {
-            switch (args[0].toLowerCase()) {
-                case "invite", "join", "kick", "rename", "delete", "setmayor", "setofficer", "setcitizen", "sethome", "delhome", "home" -> completions.addAll(townRepository.findAll()
-                        .stream()
-                        .map(Town::getName)
-                        .toList());
-
-            }
-        } else if (args.length == 3) {
-            switch (args[0].toLowerCase()) {
-                case "invite", "join" -> {
-                    Optional<Town> townOpt = townRepository.findByName(args[1]);
-                    townOpt.ifPresent(town -> completions.addAll(Bukkit.getOnlinePlayers()
-                            .stream()
-                            .map(Player::getName)
-                            .filter(p -> town.getMember(p) == null)
-                            .toList()));
-                }
-                case "kick", "setmayor" -> {
-                    Optional<Town> townOpt = townRepository.findByName(args[1]);
-                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
-                            .stream()
-                            .filter(m -> !m.getRole().equals(TownRole.MAYOR))
-                            .map(TownMember::getName)
-                            .toList()));
-                }
-                case "setofficer" -> {
-                    Optional<Town> townOpt = townRepository.findByName(args[1]);
-                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
-                            .stream()
-                            .filter(m -> !m.getRole().equals(TownRole.OFFICER) && !m.getRole().equals(TownRole.MAYOR))
-                            .map(TownMember::getName)
-                            .toList()));
-                }
-                case "setcitizen" -> {
-                    Optional<Town> townOpt = townRepository.findByName(args[1]);
-                    townOpt.ifPresent(town -> completions.addAll(town.getMembers()
-                            .stream()
-                            .filter(m -> !m.getRole().equals(TownRole.CITIZEN) && !m.getRole().equals(TownRole.MAYOR))
-                            .map(TownMember::getName)
-                            .toList()));
-                }
-            }
-        }
-
-        return TabCompleterUtil.getCompletions(args[args.length - 1], completions);
     }
 }

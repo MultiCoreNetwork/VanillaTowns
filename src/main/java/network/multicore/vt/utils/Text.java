@@ -432,6 +432,17 @@ public class Text {
     }
 
     /**
+     * Serialize a text to MiniMessage.
+     *
+     * @param component The component to serialize.
+     * @return the serialized text or null if the input component is null.
+     */
+    public static String toMiniMessage(Component component) {
+        if (component == null) return null;
+        return miniMessage.serialize(component);
+    }
+
+    /**
      * Converts a legacy text to a MiniMessage text.
      *
      * @param text The text to convert.

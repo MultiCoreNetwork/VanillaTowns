@@ -8,6 +8,9 @@ import dev.dejvokep.boostedyaml.settings.dumper.DumperSettings;
 import dev.dejvokep.boostedyaml.settings.general.GeneralSettings;
 import dev.dejvokep.boostedyaml.settings.loader.LoaderSettings;
 import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.milkbowl.vault.economy.Economy;
 import network.multicore.vt.commands.TownChatCommand;
 import network.multicore.vt.commands.TownCommand;
@@ -25,6 +28,7 @@ import network.multicore.vt.utils.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -66,10 +70,10 @@ public class VanillaTowns extends JavaPlugin {
     private Database db;
     private TownRepository townRepository;
     private Integer cooldownTask = null;
+    private boolean firstRun = true;
 
     public VanillaTowns() {
         Text.setLogger(getLogger());
-        Cache.init(this);
     }
 
     @Override
@@ -97,6 +101,8 @@ public class VanillaTowns extends JavaPlugin {
             return;
         }
 
+        Cache.init(this);
+
         Messages.init(this);
 
         getServer().getPluginManager().registerEvents(new CacheListener(), this);
@@ -123,6 +129,8 @@ public class VanillaTowns extends JavaPlugin {
                 toRemove.forEach(TELEPORT_COOLDOWN::remove);
             }, 0L, 20L);
         }
+
+        firstRun = false;
     }
 
     @Override
@@ -307,15 +315,16 @@ public class VanillaTowns extends JavaPlugin {
         townRepository = db.createRepository(TownRepository.class, Town.class);
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     private void registerCommands() {
-        TownCommand tCommand = new TownCommand(this);
-        getCommand("town").setExecutor(tCommand);
-        getCommand("town").setTabCompleter(tCommand);
+        if (!firstRun) return;
 
-        getCommand("townchat").setExecutor(new TownChatCommand(this));
-
-        VanillaTownsCommand vtCommand = new VanillaTownsCommand(this);
-        getCommand("vanillatowns").setExecutor(vtCommand);
-        getCommand("vanillatowns").setTabCompleter(vtCommand);
+        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
+        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            final Commands commands = event.registrar();
+            commands.register("town", "Town", List.of("towns"), new TownCommand(this));
+            commands.register("townchat", "Town Chat", List.of("tchat", "tc"), new TownChatCommand(this));
+            commands.register("vanillatowns", "VanillaTowns", List.of("vtowns"), new VanillaTownsCommand(this));
+        });
     }
 }

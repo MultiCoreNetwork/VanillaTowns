@@ -1,6 +1,8 @@
 package network.multicore.vt.commands;
 
 import dev.dejvokep.boostedyaml.YamlDocument;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import network.multicore.vt.VanillaTowns;
 import network.multicore.vt.data.Town;
 import network.multicore.vt.data.TownMember;
@@ -9,10 +11,7 @@ import network.multicore.vt.data.TownRole;
 import network.multicore.vt.utils.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class TownCommand implements CommandExecutor, TabCompleter {
+@SuppressWarnings("UnstableApiUsage")
+public class TownCommand implements BasicCommand {
     private final VanillaTowns plugin;
     private final Messages messages = Messages.get();
     private final Cache cache = Cache.get();
@@ -42,20 +42,22 @@ public class TownCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public void execute(@NotNull CommandSourceStack src, @NotNull String[] args) {
+        CommandSender sender = src.getSender();
+
         if (!(sender instanceof Player player)) {
             Text.send(messages.get("not-player"), sender);
-            return true;
+            return;
         }
 
         if (!plugin.hasPermission(player, "vanillatowns.town")) {
             Text.send(messages.get("no-permission"), player);
-            return true;
+            return;
         }
 
         if (args.length < 1) {
             info(player, null);
-            return true;
+            return;
         }
 
         switch (args[0].toLowerCase()) {
@@ -102,8 +104,88 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             case "user" -> user(player, args);
             default -> info(player, args[0]);
         }
+    }
 
-        return true;
+    @Override
+    public @NotNull Collection<String> suggest(@NotNull CommandSourceStack src, @NotNull String[] args) {
+        CommandSender sender = src.getSender();
+
+        if (!(sender instanceof Player player)) return List.of();
+        if (!plugin.hasPermission(player, "vanillatowns.player")) return List.of();
+
+        List<String> completions = new ArrayList<>();
+
+        if (args.length == 0 || args.length == 1) {
+            if (plugin.hasPermission(player, "vanillatowns.create")) {
+                completions.add("create");
+                completions.add("delete");
+            }
+            if (plugin.hasPermission(player, "vanillatowns.baltop")) completions.add("baltop");
+            if (plugin.hasPermission(player, "vanillatowns.invite")) completions.add("invite");
+            if (plugin.hasPermission(player, "vanillatowns.join")) {
+                completions.add("join");
+                completions.add("leave");
+            }
+            if (plugin.hasPermission(player, "vanillatowns.kick")) completions.add("kick");
+            if (plugin.hasPermission(player, "vanillatowns.give")) completions.add("give");
+            if (plugin.hasPermission(player, "vanillatowns.home")) completions.add("home");
+            if (plugin.hasPermission(player, "vanillatowns.home.edit")) {
+                completions.add("sethome");
+                completions.add("delhome");
+            }
+            if (plugin.hasPermission(player, "vanillatowns.balance")) completions.add("balance");
+            if (plugin.hasPermission(player, "vanillatowns.deposit")) completions.add("deposit");
+            if (plugin.hasPermission(player, "vanillatowns.withdraw")) completions.add("withdraw");
+            if (plugin.hasPermission(player, "vanillatowns.rename")) completions.add("rename");
+
+            completions.add("user");
+        } else if (args.length == 2) {
+            switch (args[0].toLowerCase()) {
+                case "invite" -> {
+                    Optional<Town> townOpt = cache.getTown(player);
+                    if (townOpt.isPresent() && townOpt.get().canInvite(player)) {
+                        Bukkit.getOnlinePlayers().stream()
+                                .filter(p -> townOpt.get().getMember(p) == null && !TabCompleterUtil.isVanished(p))
+                                .map(Player::getName)
+                                .forEach(completions::add);
+                    }
+                }
+                case "kick", "give" -> {
+                    Optional<Town> townOpt = cache.getTown(player);
+                    if (townOpt.isPresent()) {
+                        Town town = townOpt.get();
+                        town.getMembers().stream().map(TownMember::getName).forEach(completions::add);
+                    }
+                }
+                case "user" -> completions.addAll(List.of("setOfficer", "removeOfficer", "deposit", "withdraw"));
+            }
+        } else if (args.length == 3) {
+            if (args[0].equalsIgnoreCase("user")) {
+                switch (args[1].toLowerCase()) {
+                    case "setofficer", "deposit", "withdraw" -> {
+                        Optional<Town> townOpt = cache.getTown(player);
+                        if (townOpt.isPresent()) {
+                            Town town = townOpt.get();
+                            town.getCitizens().stream().map(TownMember::getName).forEach(completions::add);
+                        }
+                    }
+                    case "removeofficer" -> {
+                        Optional<Town> townOpt = cache.getTown(player);
+                        if (townOpt.isPresent()) {
+                            Town town = townOpt.get();
+                            town.getOfficers().stream().map(TownMember::getName).forEach(completions::add);
+                        }
+                    }
+                }
+            }
+        } else if (args.length == 4) {
+            if (args[0].equalsIgnoreCase("user") && (args[1].equalsIgnoreCase("deposit") || args[1].equalsIgnoreCase("withdraw"))) {
+                completions.addAll(List.of("allow", "deny"));
+            }
+        }
+
+        if (args.length > 0) return TabCompleterUtil.getCompletions(args[args.length - 1], completions);
+        else return completions;
     }
 
     private void help(Player player) {
@@ -167,26 +249,26 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (self) {
             Text.send(messages.getListAndReplace("town-info-self",
-                    "town", town.getName(),
+                    "town", town,
                     "balance", Utils.formatNumber(town.getBalance()),
-                    "mayor", town.getMayor().getName(),
+                    "mayor", town.getMayor(),
                     "officers", String.join(", ", town.getOfficers().stream().map(TownMember::getName).toList()),
                     "citizens", String.join(", ", town.getCitizens().stream().map(TownMember::getName).toList()),
                     "home", townHome), player);
         } else {
             if (plugin.hasStaffPermission(player, "vanillatowns.staff.info")) {
                 Text.send(messages.getListAndReplace("town-info-staff",
-                        "town", town.getName(),
+                        "town", town,
                         "balance", Utils.formatNumber(town.getBalance()),
-                        "mayor", town.getMayor().getName(),
+                        "mayor", town.getMayor(),
                         "officers", String.join(", ", town.getOfficers().stream().map(TownMember::getName).toList()),
                         "citizens", String.join(", ", town.getCitizens().stream().map(TownMember::getName).toList()),
                         "home", townHome), player);
             } else {
                 Text.send(messages.getListAndReplace("town-info-others",
-                        "town", town.getName(),
+                        "town", town,
                         "balance", Utils.formatNumber(town.getBalance()),
-                        "mayor", town.getMayor().getName(),
+                        "mayor", town.getMayor(),
                         "officers", String.join(", ", town.getOfficers().stream().map(TownMember::getName).toList()),
                         "citizens", String.join(", ", town.getCitizens().stream().map(TownMember::getName).toList()),
                         "home", townHome), player);
@@ -231,16 +313,17 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         Town town = new Town(name, player);
         town = townRepository.save(town);
+        cache.addTown(town);
 
         if (config.getBoolean("broadcast.town-created", true)) {
             Text.broadcast(messages.getAndReplace("town-created-broadcast",
-                    "player", player.displayName(),
-                    "town", town.getName()));
+                    "player", player,
+                    "town", town));
         } else {
-            Text.send(messages.getAndReplace("town-created", "town", town.getName()), player);
+            Text.send(messages.getAndReplace("town-created", "town", town), player);
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> created town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> created town <aqua>" + town.getName() + "<reset>");
     }
 
     private void invite(Player player, String name) {
@@ -281,8 +364,8 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         VanillaTowns.INVITES.put(target.getUniqueId(), town.getId());
 
-        Text.send(messages.getAndReplace("invite-sent", "player", target.displayName()), player);
-        Text.send(messages.getAndReplace("invite-received", "town", town.getName(), "player", player.displayName()), target);
+        Text.send(messages.getAndReplace("invite-sent", "player", target), player);
+        Text.send(messages.getAndReplace("invite-received", "town", town, "player", player), target);
     }
 
     private void join(Player player) {
@@ -316,19 +399,19 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (config.getBoolean("broadcast.player-joined-town", false)) {
             Text.broadcast(messages.getAndReplace("player-joined-town-broadcast",
-                    "player", player.displayName(),
-                    "town", town.getName()));
+                    "player", player,
+                    "town", town));
         } else {
-            Text.send(messages.getAndReplace("player-joined-town", "town", town.getName()), player);
+            Text.send(messages.getAndReplace("player-joined-town", "town", town), player);
 
             town.getMembers()
                     .stream()
                     .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                     .filter(p -> p != null && !p.getUniqueId().equals(player.getUniqueId()))
-                    .forEach(p -> Text.send(messages.getAndReplace("player-joined-town-members", "player", player.displayName()), p));
+                    .forEach(p -> Text.send(messages.getAndReplace("player-joined-town-members", "player", player), p));
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> joined town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> joined town <aqua>" + town.getName() + "<reset>");
     }
 
     private void leave(Player player) {
@@ -356,19 +439,19 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (config.getBoolean("broadcast.player-left-town", false)) {
             Text.broadcast(messages.getAndReplace("player-left-town-broadcast",
-                    "player", player.displayName(),
-                    "town", town.getName()));
+                    "player", player,
+                    "town", town));
         } else {
-            Text.send(messages.getAndReplace("player-left-town", "town", town.getName()), player);
+            Text.send(messages.getAndReplace("player-left-town", "town", town), player);
 
             town.getMembers()
                     .stream()
                     .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                     .filter(p -> p != null && !p.getUniqueId().equals(player.getUniqueId()))
-                    .forEach(p -> Text.send(messages.getAndReplace("player-left-town-members", "player", player.displayName()), p));
+                    .forEach(p -> Text.send(messages.getAndReplace("player-left-town-members", "player", player), p));
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> left town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> left town <aqua>" + town.getName() + "<reset>");
     }
 
     private void kick(Player player, String name) {
@@ -402,25 +485,25 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (config.getBoolean("broadcast.player-left", false)) {
             Text.broadcast(messages.getAndReplace("player-kicked-from-town-broadcast",
-                    "player", player.displayName(),
-                    "town", town.getName(),
-                    "target", targetMember.getName()));
+                    "player", player,
+                    "town", town,
+                    "target", targetMember));
         } else {
-            Text.send(messages.getAndReplace("player-kicked-from-town", "town", town.getName(), "target", targetMember.getName()), player);
+            Text.send(messages.getAndReplace("player-kicked-from-town", "town", town, "target", targetMember), player);
 
             town.getMembers()
                     .stream()
                     .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                     .filter(p -> p != null && !p.getUniqueId().equals(player.getUniqueId()) && !p.getUniqueId().equals(targetMember.getUniqueId()))
-                    .forEach(p -> Text.send(messages.getAndReplace("player-kicked-from-town-members", "player", player.displayName(), "target", targetMember.getName()), p));
+                    .forEach(p -> Text.send(messages.getAndReplace("player-kicked-from-town-members", "player", player, "target", targetMember), p));
 
             Player target = Bukkit.getPlayer(targetMember.getUniqueId());
             if (target != null) {
-                Text.send(messages.getAndReplace("kicked-from-town-target", "town", town.getName(), "player", player.displayName()), target);
+                Text.send(messages.getAndReplace("kicked-from-town-target", "town", town, "player", player), target);
             }
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> kicked <aqua>" + targetMember.getName() + "<reset> from town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> kicked <aqua>" + targetMember.getName() + "<reset> from town <aqua>" + town.getName() + "<reset>");
     }
 
     private void rename(Player player, String name) {
@@ -460,7 +543,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                     .stream()
                     .filter(p -> !p.getUniqueId().equals(player.getUniqueId()))
                     .forEach(p -> Text.send(messages.getAndReplace("town-renamed-broadcast",
-                            "player", player.displayName(),
+                            "player", player,
                             "old_name", oldName,
                             "new_name", finalName), p));
         } else {
@@ -472,7 +555,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                     .forEach(p -> Text.send(messages.getAndReplace("town-renamed-members", "old", oldName, "new", finalName), p));
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> renamed town <aqua>" + oldName + "<reset> to <aqua>" + name + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> renamed town <aqua>" + oldName + "<reset> to <aqua>" + name + "<reset>");
     }
 
     private void give(Player player, String name) {
@@ -513,9 +596,9 @@ public class TownCommand implements CommandExecutor, TabCompleter {
                 .stream()
                 .map(m -> Bukkit.getPlayer(m.getUniqueId()))
                 .filter(Objects::nonNull)
-                .forEach(p -> Text.send(messages.getAndReplace("town-given", "player", targetMember.getName()), p));
+                .forEach(p -> Text.send(messages.getAndReplace("town-given", "player", targetMember), p));
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> gave town <aqua>" + town.getName() + "<reset> to <aqua>" + targetMember.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> gave town <aqua>" + town.getName() + "<reset> to <aqua>" + targetMember.getName() + "<reset>");
     }
 
     private void delete(Player player) {
@@ -542,22 +625,21 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (town.getBalance() > 0) {
             if (!plugin.giveMoney(player, town.getBalance())) {
-                Text.warning("Failed to give <yellow>" + town.getBalance() + "$<reset> to player <aqua>" + player.displayName() + "<reset> after deleting town <aqua>" + town.getName());
+                Text.warning("Failed to give <yellow>" + town.getBalance() + "$<reset> to player <aqua>" + player.getName() + "<reset> after deleting town <aqua>" + town.getName());
             }
         }
 
         if (config.getBoolean("broadcast.town-deleted", true)) {
             Bukkit.getOnlinePlayers()
                     .stream()
-                    .filter(p -> !p.getUniqueId().equals(player.getUniqueId()))
                     .forEach(p -> Text.send(messages.getAndReplace("town-deleted-broadcast",
-                            "player", player.displayName(),
-                            "town", town.getName()), p));
+                            "player", player,
+                            "town", town), p));
         } else {
             Text.send(messages.get("town-deleted-members"), player);
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> deleted town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> deleted town <aqua>" + town.getName() + "<reset>");
     }
 
     private void balance(Player player, String name) {
@@ -594,7 +676,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        Text.send(messages.getAndReplace("town-balance", "town", town.getName(), "balance", Utils.formatNumber(town.getBalance())), player);
+        Text.send(messages.getAndReplace("town-balance", "town", town, "balance", Utils.formatNumber(town.getBalance())), player);
     }
 
     private void deposit(Player player, String amountStr) {
@@ -645,7 +727,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         Text.send(messages.getAndReplace("deposit-success", "amount", Utils.formatNumber(amount)), player);
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> deposited <yellow>" + amount + "$<reset> to town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> deposited <yellow>" + amount + "$<reset> to town <aqua>" + town.getName() + "<reset>");
     }
 
     private void withdraw(Player player, String amountStr) {
@@ -691,13 +773,13 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         if (!plugin.giveMoney(player, amount)) {
             Text.send(messages.get("withdraw-failed"), player);
-            Text.warning("Failed to give <yellow>" + amount + "$<reset> to player <aqua>" + player.displayName() + "<reset> after withdrawing from town <aqua>" + town.getName());
+            Text.warning("Failed to give <yellow>" + amount + "$<reset> to player <aqua>" + player.getName() + "<reset> after withdrawing from town <aqua>" + town.getName());
             return;
         }
 
         Text.send(messages.getAndReplace("withdraw-success", "amount", Utils.formatNumber(amount)), player);
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> withdrew <yellow>" + amount + "$<reset> from town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> withdrew <yellow>" + amount + "$<reset> from town <aqua>" + town.getName() + "<reset>");
     }
 
     private void baltop(Player player) {
@@ -717,14 +799,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             Town town = towns.get(i);
             if (townOpt.isPresent() && town.getId() == townOpt.get().getId()) found = true;
 
-            Text.send(messages.getAndReplace("baltop-entry", "position", i + 1, "town", town.getName(), "balance", Utils.formatNumber(town.getBalance())), player);
+            Text.send(messages.getAndReplace("baltop-entry", "position", i + 1, "town", town, "balance", Utils.formatNumber(town.getBalance())), player);
         }
 
         if (!found && townOpt.isPresent()) {
             Town town = towns.stream().filter(t -> t.getId() == townOpt.get().getId()).findFirst().orElse(null);
             if (town != null) {
                 int index = towns.indexOf(town);
-                Text.send(messages.getAndReplace("baltop-entry", "position", index + 1, "town", town.getName(), "balance", Utils.formatNumber(town.getBalance())), player);
+                Text.send(messages.getAndReplace("baltop-entry", "position", index + 1, "town", town, "balance", Utils.formatNumber(town.getBalance())), player);
             }
         }
 
@@ -783,7 +865,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         Text.send(messages.get("home-set"), player);
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> set home for town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> set home for town <aqua>" + town.getName() + "<reset>");
     }
 
     private void delHome(Player player) {
@@ -811,7 +893,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         Text.send(messages.get("home-deleted"), player);
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> deleted home for town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> deleted home for town <aqua>" + town.getName() + "<reset>");
     }
 
     private void home(Player player) {
@@ -932,14 +1014,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("officer-set", "player", targetMember.getName()), player);
+        Text.send(messages.getAndReplace("officer-set", "player", targetMember), player);
 
         Player target = Bukkit.getPlayer(targetMember.getUniqueId());
         if (target != null) {
             Text.send(messages.get("officer-set-target"), target);
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> set officer <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> set officer <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
     }
 
     private void removeOfficer(Player player, String name) {
@@ -971,14 +1053,14 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         town = townRepository.save(town);
         cache.updateTown(town);
 
-        Text.send(messages.getAndReplace("officer-removed", "player", targetMember.getName()), player);
+        Text.send(messages.getAndReplace("officer-removed", "player", targetMember), player);
 
         Player target = Bukkit.getPlayer(targetMember.getUniqueId());
         if (target != null) {
             Text.send(messages.get("officer-removed-target"), target);
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> removed officer <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> removed officer <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
     }
 
     private void deposit(Player player, String name, String bool) {
@@ -1019,9 +1101,9 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         cache.updateTown(town);
 
         if (deposit) {
-            Text.send(messages.getAndReplace("deposit-allowed", "player", targetMember.getName()), player);
+            Text.send(messages.getAndReplace("deposit-allowed", "player", targetMember), player);
         } else {
-            Text.send(messages.getAndReplace("deposit-denied", "player", targetMember.getName()), player);
+            Text.send(messages.getAndReplace("deposit-denied", "player", targetMember), player);
         }
 
         Player target = Bukkit.getPlayer(targetMember.getUniqueId());
@@ -1033,7 +1115,7 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> " + (deposit ? "allowed" : "denied") + " deposit for <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
+        Text.info("Player <aqua>" + player.getName() + "<reset> " + (deposit ? "allowed" : "denied") + " deposit for <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
     }
 
     private void withdraw(Player player, String name, String bool) {
@@ -1074,9 +1156,9 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         cache.updateTown(town);
 
         if (withdraw) {
-            Text.send(messages.getAndReplace("withdraw-allowed", "player", targetMember.getName()), player);
+            Text.send(messages.getAndReplace("withdraw-allowed", "player", targetMember), player);
         } else {
-            Text.send(messages.getAndReplace("withdraw-denied", "player", targetMember.getName()), player);
+            Text.send(messages.getAndReplace("withdraw-denied", "player", targetMember), player);
         }
 
         Player target = Bukkit.getPlayer(targetMember.getUniqueId());
@@ -1088,86 +1170,6 @@ public class TownCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        Text.info("Player <aqua>" + player.displayName() + "<reset> " + (withdraw ? "allowed" : "denied") + " withdraw for <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
-    }
-
-    @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!(sender instanceof Player player)) return List.of();
-        if (!plugin.hasPermission(player, "vanillatowns.player")) return List.of();
-
-        List<String> completions = new ArrayList<>();
-
-        if (args.length == 1) {
-            if (plugin.hasPermission(player, "vanillatowns.create")) {
-                completions.add("create");
-                completions.add("delete");
-            }
-            if (plugin.hasPermission(player, "vanillatowns.baltop")) completions.add("baltop");
-            if (plugin.hasPermission(player, "vanillatowns.invite")) completions.add("invite");
-            if (plugin.hasPermission(player, "vanillatowns.join")) {
-                completions.add("join");
-                completions.add("leave");
-            }
-            if (plugin.hasPermission(player, "vanillatowns.kick")) completions.add("kick");
-            if (plugin.hasPermission(player, "vanillatowns.give")) completions.add("give");
-            if (plugin.hasPermission(player, "vanillatowns.home")) completions.add("home");
-            if (plugin.hasPermission(player, "vanillatowns.home.edit")) {
-                completions.add("sethome");
-                completions.add("delhome");
-            }
-            if (plugin.hasPermission(player, "vanillatowns.balance")) completions.add("balance");
-            if (plugin.hasPermission(player, "vanillatowns.deposit")) completions.add("deposit");
-            if (plugin.hasPermission(player, "vanillatowns.withdraw")) completions.add("withdraw");
-            if (plugin.hasPermission(player, "vanillatowns.rename")) completions.add("rename");
-
-            completions.add("user");
-        } else if (args.length == 2) {
-            switch (args[0].toLowerCase()) {
-                case "invite" -> {
-                    Optional<Town> townOpt = cache.getTown(player);
-                    if (townOpt.isPresent() && townOpt.get().canInvite(player)) {
-                        Bukkit.getOnlinePlayers().stream()
-                                .filter(p -> townOpt.get().getMember(p) == null && !TabCompleterUtil.isVanished(p))
-                                .map(Player::getName)
-                                .forEach(completions::add);
-                    }
-                }
-                case "kick", "give" -> {
-                    Optional<Town> townOpt = cache.getTown(player);
-                    if (townOpt.isPresent()) {
-                        Town town = townOpt.get();
-                        town.getMembers().stream().map(TownMember::getName).forEach(completions::add);
-                    }
-                }
-                case "user" -> completions.addAll(List.of("setOfficer", "removeOfficer", "deposit", "withdraw"));
-            }
-        } else if (args.length == 3) {
-            if (args[0].equalsIgnoreCase("user")) {
-                switch (args[1].toLowerCase()) {
-                    case "setofficer", "deposit", "withdraw" -> {
-                        Optional<Town> townOpt = cache.getTown(player);
-                        if (townOpt.isPresent()) {
-                            Town town = townOpt.get();
-                            town.getCitizens().stream().map(TownMember::getName).forEach(completions::add);
-                        }
-                    }
-                    case "removeofficer" -> {
-                        Optional<Town> townOpt = cache.getTown(player);
-                        if (townOpt.isPresent()) {
-                            Town town = townOpt.get();
-                            town.getOfficers().stream().map(TownMember::getName).forEach(completions::add);
-                        }
-                    }
-                }
-            }
-        } else if (args.length == 4) {
-            if (args[0].equalsIgnoreCase("user") && (args[1].equalsIgnoreCase("deposit") || args[1].equalsIgnoreCase("withdraw"))) {
-                completions.addAll(List.of("allow", "deny"));
-            }
-        }
-
-        // TODO Verify if this is correct
-        return TabCompleterUtil.getCompletions(args[args.length - 1], completions);
+        Text.info("Player <aqua>" + player.getName() + "<reset> " + (withdraw ? "allowed" : "denied") + " withdraw for <aqua>" + targetMember.getName() + "<reset> in town <aqua>" + town.getName() + "<reset>");
     }
 }

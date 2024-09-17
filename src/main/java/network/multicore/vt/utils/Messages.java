@@ -1,7 +1,12 @@
 package network.multicore.vt.utils;
 
 import dev.dejvokep.boostedyaml.block.implementation.Section;
+import net.kyori.adventure.text.Component;
 import network.multicore.vt.VanillaTowns;
+import network.multicore.vt.data.Town;
+import network.multicore.vt.data.TownMember;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -30,6 +35,18 @@ public class Messages {
         String msg = messages.getString(route, "");
 
         for (int i = 0; i < targets.length; i++) {
+            if (replacements[i] instanceof Component component) {
+                replacements[i] = Text.toMiniMessage(component);
+            } else if (replacements[i] instanceof Player player) {
+                replacements[i] = Text.toMiniMessage(player.displayName());
+            } else if (replacements[i] instanceof CommandSender) {
+                replacements[i] = messages.getString("console", "console");
+            } else if (replacements[i] instanceof Town town) {
+                replacements[i] = town.getName();
+            } else if (replacements[i] instanceof TownMember member) {
+                replacements[i] = member.getName();
+            }
+
             msg = msg.replace("{" + targets[i] + "}", replacements[i].toString());
         }
 
@@ -79,6 +96,18 @@ public class Messages {
             String msg = list.get(i);
 
             for (int j = 0; j < targets.length; j++) {
+                if (replacements[j] instanceof Component component) {
+                    replacements[j] = Text.toMiniMessage(component);
+                } else if (replacements[j] instanceof Player player) {
+                    replacements[j] = Text.toMiniMessage(player.displayName());
+                } else if (replacements[j] instanceof CommandSender) {
+                    replacements[j] = messages.getString("console", "console");
+                } else if (replacements[j] instanceof Town town) {
+                    replacements[j] = town.getName();
+                } else if (replacements[j] instanceof TownMember member) {
+                    replacements[j] = member.getName();
+                }
+
                 msg = msg.replace("{" + targets[j] + "}", replacements[j].toString());
             }
 

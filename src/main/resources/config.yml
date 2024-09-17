@@ -219,8 +219,8 @@ messages:
   withdraw-denied-target: "<aqua>You can't withdraw anymore from the town bank."
 
   # Chat
-  chat-format: "<dark_purple><b>TOWN</b> {role_color}{role} <purple><b>{player}</b><gray> ><reset> {message}"
-  socialspy-format: "<dark_purple><b>TOWN</b><purple> {town} {role_color}{role} <purple><b>{player}</b><gray> ><reset> {message}"
+  chat-format: "<dark_purple><b>TOWN</b> {role_color}{role} <light_purple><b>{player}</b><gray> ><reset> {message}"
+  socialspy-format: "<dark_purple><b>TOWN</b><light_purple> {town} {role_color}{role} <light_purple><b>{player}</b><gray> ><reset> {message}"
 
   # Reload
   plugin-reloaded: "<aqua>Plugin reloaded in <yellow>{time}ms<aqua>."
@@ -301,14 +301,14 @@ messages:
   staff-help:
     - "&7&m----&r &e&lVanilla Towns&r &7&m----"
     - "&b/vanillatowns reload &f- &eReload the plugin."
-    - "&b/vanillatowns invite <player> <town> &f- &eInvite a player to join a town."
-    - "&b/vanillatowns join <player> <town> &f- &eAdd a player to a town."
-    - "&b/vanillatowns kick <player> <town> &f- &eKick a player from a town."
-    - "&b/vanillatowns rename <name> <town> &f- &eRename a town."
+    - "&b/vanillatowns invite <town> <player> &f- &eInvite a player to join a town."
+    - "&b/vanillatowns join <town> <player> &f- &eAdd a player to a town."
+    - "&b/vanillatowns kick <town> <player> &f- &eKick a player from a town."
+    - "&b/vanillatowns rename <town> <name> &f- &eRename a town."
     - "&b/vanillatowns delete <town> &f- &eDelete a town."
-    - "&b/vanillatowns setMayor <player> <town> &f- &ePromote a player to town mayor."
-    - "&b/vanillatowns setOfficer <player> <town> &f- &ePromote a player to town officer."
-    - "&b/vanillatowns setMember <player> <town> &f- &eDemote an officer to simple member."
+    - "&b/vanillatowns setMayor <town> <player> &f- &ePromote a player to town mayor."
+    - "&b/vanillatowns setOfficer <town> <player> &f- &ePromote a player to town officer."
+    - "&b/vanillatowns setMember <town> <player> &f- &eDemote an officer to simple member."
     - "&b/vanillatowns setHome <town> &f- &eSet the town home of a town."
     - "&b/vanillatowns home <town> &f- &eTeleport to the town home of a town."
     - "&b/vanillatowns delHome <town> &f- &eDelete the town home of a town."

@@ -1,14 +1,14 @@
 package network.multicore.vt.commands;
 
 import dev.dejvokep.boostedyaml.YamlDocument;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import network.multicore.vt.VanillaTowns;
 import network.multicore.vt.data.Town;
 import network.multicore.vt.utils.Cache;
 import network.multicore.vt.utils.Messages;
 import network.multicore.vt.utils.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 import java.util.Optional;
 
-public class TownChatCommand implements CommandExecutor {
+@SuppressWarnings("UnstableApiUsage")
+public class TownChatCommand implements BasicCommand {
     private final VanillaTowns plugin;
     private final Messages messages = Messages.get();
     private final Cache cache = Cache.get();
@@ -28,27 +29,29 @@ public class TownChatCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public void execute(@NotNull CommandSourceStack src, @NotNull String[] args) {
+        CommandSender sender = src.getSender();
+
         if (!(sender instanceof Player player)) {
             Text.send(messages.get("not-player"), sender);
-            return true;
+            return;
         }
 
         if (!plugin.hasPermission(player, "vanillatowns.chat")) {
             Text.send(messages.get("no-permissions"), player);
-            return true;
+            return;
         }
 
         if (args.length < 1) {
             help(player);
-            return true;
+            return;
         }
 
         Optional<Town> townOpt = cache.getTown(player);
 
         if (townOpt.isEmpty()) {
             Text.send(messages.get("not-in-town"), player);
-            return true;
+            return;
         }
 
         Town town = townOpt.get();
@@ -56,7 +59,7 @@ public class TownChatCommand implements CommandExecutor {
         String msg = messages.getAndReplace("chat-format",
                 "role_color", config.getString("colors." + town.getMember(player).getRole().getName()),
                 "role", config.getString("roles." + town.getMember(player).getRole().getName()),
-                "player", player.displayName(),
+                "player", player,
                 "message", String.join(" ", args)
         );
 
@@ -67,10 +70,10 @@ public class TownChatCommand implements CommandExecutor {
                 .forEach(p -> Text.send(msg, p));
 
         String socialspy = messages.getAndReplace("socialspy-format",
-                "town", town.getName(),
+                "town", town,
                 "role_color", config.getString("colors." + town.getMember(player).getRole().getName()),
                 "role", config.getString("roles." + town.getMember(player).getRole().getName()),
-                "player", player.displayName(),
+                "player", player,
                 "message", String.join(" ", args)
         );
 
@@ -78,8 +81,6 @@ public class TownChatCommand implements CommandExecutor {
                 .stream()
                 .filter(p -> plugin.hasStaffPermission(p, "vanillatowns.socialspy"))
                 .forEach(p -> Text.send(socialspy, p));
-
-        return true;
     }
 
     private void help(Player player) {

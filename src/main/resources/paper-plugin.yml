@@ -16,14 +16,3 @@ dependencies:
     Essentials:
       load: BEFORE
       require: false
-
-commands:
-  vanillatowns:
-    aliases: [ vt ]
-    description: Main plugin command
-  town:
-    aliases: [ towns ]
-    description: Town command
-  townchat:
-    aliases: [ tchat, tc ]
-    description: Town chat
