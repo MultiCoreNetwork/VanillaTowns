@@ -1,0 +1,9 @@
+[
+  "org.hibernate.orm:hibernate-core:6.6.0.Final",
+  "com.mysql:mysql-connector-j:9.0.0",
+  "org.xerial:sqlite-jdbc:3.46.1.0",
+  "com.h2database:h2:2.3.232",
+  "org.mariadb.jdbc:mariadb-java-client:3.4.1",
+  "org.postgresql:postgresql:42.7.3",
+  "com.zaxxer:HikariCP:5.1.0"
+]

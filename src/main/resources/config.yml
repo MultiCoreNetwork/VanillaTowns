@@ -1,0 +1,317 @@
+# Storage settings
+# Storage options:
+# => Remote databases
+# ==> MySQL
+# ==> MariaDB (preferred over MySQL)
+# ==> PostgreSQL
+# => Flatfile/local databases
+# ==> H2
+# ==> SQLite
+storage-type: H2
+
+# MySQL/MariaDB/PostgreSQL settings
+# Modify the values below only if you are using a remote database.
+data:
+  # Define the address and port for the database.
+  # If not defined, the default port will be used.
+  # (MySQL/MariaDB: 3306, PostgreSQL: 5432)
+  # Format: host:port
+  address: localhost
+
+  # The name of the database to use.
+  database: minecraft
+
+  # Credentials
+  username: minecraft
+  password: password
+
+  # The settings below apply to the MySQL/MariaDB connection pool.
+  # The default values will be suitable for most servers.
+  # Do not change these values unless you know what you are doing.
+  pool:
+    # Enable or disable the connection pool.
+    enabled: true
+    # The maximum number of connections that can be created in the pool.
+    maximum-pool-size: 10
+    # The minimum number of idle connections that the pool will try to maintain.
+    minimum-idle: 10
+    # The maximum lifetime of a connection in the pool.
+    maximum-lifetime: 1800000 # 30 minutes
+    # The maximum time that a connection is allowed to sit idle in the pool.
+    keepalive-time: 0
+    # The maximum time that the pool will wait for a connection to be returned before throwing an exception.
+    connection-timeout: 5000 # 5 seconds
+
+# Town settings
+# The name of the towns must match the following pattern.
+town-name-pattern: "^[a-zA-Z0-9_]{3,16}$"
+
+# Economy
+# Money required to create a town. Set to 0 to disable.
+town-creation-cost: 8192.0
+# Money required to set a town home. Set to 0 to disable.
+town-sethome-cost: 0.0
+# Money required to teleport to a town home. Set to 0 to disable.
+town-home-teleport-cost: 0.0
+
+# Cooldown in seconds for the town home teleport command. Set to 0 to disable.
+town-home-teleport-cooldown: 60
+# Time in seconds before the player is teleported to the town home. Set to 0 to disable.
+town-home-teleport-countdown: 5
+# Dimensions in which town homes cannot be set
+town-home-dimension-blacklist: [ "the_end", "nether" ]
+
+# Broadcasts
+# When set to true, all the players on the server will receive a message when an event occurs.
+broadcasts:
+  town-created: true
+  town-deleted: true
+  town-renamed: true
+  player-joined-town: false
+  player-left-town: false
+
+# Role colors
+colors:
+  mayor: "<red>"
+  officer: "<gold>"
+  citizen: "<aqua>"
+
+# Role names
+roles:
+  mayor: "Mayor"
+  officer: "Officer"
+  citizen: "Citizen"
+
+# Messages
+messages:
+  not-player: "<red>You must be a player to run this command."
+  no-permissions: "<red>Insufficient permissions."
+  not-in-town: "<red>You are not in a town."
+  town-not-found: "<red>Town not found."
+  player-not-found: "<red>Player not found."
+  already-in-town: "<red>You are already in a town."
+  player-already-in-town: "<red>This player is already in a town."
+  not-in-your-town: "<red>This player is not in your town."
+  player-not-in-town: "<red>This player is not in that town."
+  invalid-name: "<red>Invalid town name."
+  invalid-amount: "<red>Invalid amount."
+  not-enough-money: "<red>You don't have enough money."
+  not-enough-town-money: "<red>Your town bank doesn't have enough money."
+  not-citizen: "<red>This player is not a citizen."
+  invalid-boolean: "<red>The argument you provided is invalid. Valid values are: true/allow/yes or false/deny/no."
+  console: "console"
+
+  # Used in placeholders when a player is not in a town
+  no-town: ""
+
+  # Town info
+  home-not-set-info: "not set"
+  town-home: "{world} - {x} {y} {z} [{yaw} {pitch}]"
+
+  # Town create
+  name-not-available: "<red>Town name not available."
+  town-created: "<aqua>Town <yellow>{town}<aqua> created."
+  town-created-broadcast: "<yellow>{player}<aqua> created the town <yellow>{town}<aqua>."
+  town-creation-failed-withdraw: "<red>An error occurred while withdrawing the money to create the town."
+
+  # Town invite
+  no-invite-permission: "<red>You must be the mayor or an officer to invite players to your town."
+  no-join-permission: "<red>That player doesn't have the permission to join a town."
+  invite-sent: "<aqua>You invited <yellow>{player}<aqua> to join your town."
+  invite-received: "<aqua>You have been invited to join the town <yellow>{town}<aqua> by <yellow>{player}<aqua>."
+
+  # Town join
+  no-invites: "<red>You don't have any invite."
+  player-joined-town: "<aqua>You joined the town <yellow>{town}<aqua>."
+  player-joined-town-broadcast: "<yellow>{player}<aqua> joined the town <yellow>{town}<aqua>."
+  player-joined-town-members: "<yellow>{player}<aqua> joined your town."
+
+  # Town leave
+  mayor-cant-leave: "<red>The mayor can't leave the town. Give your role to someone else or delete the town."
+  player-left-town: "<aqua>You left the town <yellow>{town}<aqua>."
+  player-left-town-broadcast: "<yellow>{player}<aqua> left the town <yellow>{town}<aqua>."
+  player-left-town-members: "<yellow>{player}<aqua> left your town."
+
+  # Town kick
+  no-kick-permission: "<red>You don't have the permission to kick this player from your town."
+  kicked-from-town: "<aqua>You kicked <yellow>{player}<aqua> from your town."
+  kicked-from-town-broadcast: "<yellow>{player}<aqua> has been kicked from the town <yellow>{town}<aqua>."
+  kicked-from-town-members: "<yellow>{player}<aqua> has been kicked from your town."
+  kicked-from-town-target: "<aqua>You have been kicked from the town <yellow>{town}<aqua> by <yellow>{player}<aqua>."
+
+  # Town rename
+  no-rename-permission: "<red>You must be the mayor of the town to rename it."
+  town-renamed: "<aqua>Your town is now known as <yellow>{town}<aqua>."
+  town-renamed-broadcast: "<yellow>{player}<aqua> renamed the town <yellow>{old_name}<aqua> in <yellow>{new_name}<aqua>."
+
+  # Town give
+  no-give-permission: "<red>You must be the mayor of the town to give your role to someone else."
+  cant-give-yourself: "<red>You can't give your role to yourself."
+  new-mayor: "<yellow>{player}<aqua> is the new mayor of your town."
+
+  # Town delete
+  no-delete-permission: "<red>You must be the mayor of the town to delete it."
+  town-deleted-members: "<aqua>Your town has been deleted."
+  town-deleted-broadcast: "<yellow>{player}<aqua> deleted the town <yellow>{town}<aqua>."
+
+  # Town balance
+  town-balance: "<aqua>Town {town} balance: <yellow>{balance}"
+
+  # Town deposit
+  no-deposit-permission: "<red>You don't have the permission to deposit money to your town bank."
+  deposit-failed: "<red>An error occurred while depositing the money."
+  deposit-success: "<yellow>{money}<aqua> deposited to your town bank."
+
+  # Town withdraw
+  no-withdraw-permission: "<red>You don't have the permission to withdraw money from your town bank."
+  withdraw-failed: "<red>An error occurred while withdrawing the money."
+  withdraw-success: "<yellow>{money}<aqua> withdrawn from your town bank."
+
+  # Town baltop
+  baltop-header: "<gray><st>------</st><yellow> Baltop <gray><st>------</st>"
+  baltop-footer: "<gray><st>------</st><yellow> Baltop <gray><st>------</st>"
+  baltop-entry: "<yellow>{position}. <aqua>{town} <yellow>{balance}"
+
+  # Town sethome
+  no-sethome-permission: "<red>You don't have the permission to set the town home."
+  home-set: "<aqua>Home set to your current location."
+  sethome-failed-withdraw: "<red>An error occurred while withdrawing the money to set the town home."
+  home-dimension-blacklisted: "<red>You can't set your town home in this dimension."
+
+  # Town delhome
+  no-delhome-permission: "<red>You don't have the permission to delete the town home."
+  home-deleted: "<aqua>Home deleted."
+
+  # Town home
+  home-not-set: "<red>Your town doesn't have a home."
+  home-teleport-failed-withdraw: "<red>An error occurred while withdrawing the money to teleport to the town home."
+  home-teleport-countdown: "<aqua>You will be teleported in <yellow>{time}<aqua> seconds. Do not move."
+  home-teleport-cooldown: "<red>You must wait <yellow>{time}<red> seconds before teleporting to the town home again."
+  teleport-cancelled: "<red>Teleportation cancelled."
+  home-teleporting: "<aqua>Teleporting to the town home..."
+
+  # Town user setOfficer
+  no-setofficer-permission: "<red>You must be the mayor of the town to promote a member to officer."
+  cant-setofficer-yourself: "<red>You can't promote yourself to officer."
+  already-officer: "<red>This player is already an officer."
+  officer-set: "<yellow>{player}<aqua> is now an officer of your town."
+  officer-set-target: "<aqua>You are now an officer of your town."
+
+  # Town user removeOfficer
+  no-removeofficer-permission: "<red>You must be the mayor of the town to demote an officer to member."
+  cant-removeofficer-yourself: "<red>You can't demote yourself to member."
+  not-officer: "<red>This player is not an officer."
+  officer-removed: "<yellow>{player}<aqua> is now a member of your town."
+  officer-removed-target: "<aqua>You are now a member of your town."
+
+  # Town user deposit
+  no-deposit-change-permission: "<red>You must be the mayor of the town to change the deposit permission of a member."
+  deposit-allowed: "<yellow>{player}<aqua> can now deposit to the town bank."
+  deposit-allowed-target: "<aqua>You can now deposit to the town bank."
+  deposit-denied: "<yellow>{player}<aqua> can't deposit anymore to the town bank."
+  deposit-denied-target: "<aqua>You can't deposit anymore to the town bank."
+  
+  # Town user withdraw
+  no-withdraw-change-permission: "<red>You must be the mayor of the town to change the withdraw permission of a member."
+  withdraw-allowed: "<yellow>{player}<aqua> can now withdraw from the town bank."
+  withdraw-allowed-target: "<aqua>You can now withdraw from the town bank."
+  withdraw-denied: "<yellow>{player}<aqua> can't withdraw anymore from the town bank."
+  withdraw-denied-target: "<aqua>You can't withdraw anymore from the town bank."
+
+  # Chat
+  chat-format: "<dark_purple><b>TOWN</b> {role_color}{role} <purple><b>{player}</b><gray> ><reset> {message}"
+  socialspy-format: "<dark_purple><b>TOWN</b><purple> {town} {role_color}{role} <purple><b>{player}</b><gray> ><reset> {message}"
+
+  # Reload
+  plugin-reloaded: "<aqua>Plugin reloaded in <yellow>{time}ms<aqua>."
+
+  # Staff join
+  player-joined-town-staff: "<yellow>{player}<aqua> joined the town <yellow>{town}<aqua>."
+
+  # Staff kick
+  cannot-kick-mayor: "<red>You can't kick the mayor of the town."
+  player-kicked-from-town-staff: "<yellow>{player}<aqua> has been kicked from the town <yellow>{town}<aqua>."
+
+  # Staff rename
+  town-renamed-staff: "<aqua>The town <yellow>{old_name}<aqua> is now known as <yellow>{new_name}<aqua>."
+
+  # Staff delete
+  town-deleted-staff: "<aqua>The town <yellow>{town}<aqua> has been deleted."
+
+  # Staff setRole
+  mayor-set-staff: "<yellow>{player}<aqua> is now the mayor of the town <yellow>{town}<aqua>."
+  officer-set-staff: "<yellow>{player}<aqua> is now an officer of the town <yellow>{town}<aqua>."
+  citizen-set-staff: "<yellow>{player}<aqua> is now a citizen of the town <yellow>{town}<aqua>."
+  cannot-set-mayor: "<red>You can't demote a mayor."
+
+  # Staff home
+  home-not-set-staff: "<red>The town <yellow>{town}<red> doesn't have a home."
+
+  town-info-self:
+    - "&7&m----&r &e&l{town}&r &7&m----"
+    - "&b&lBalance: &e{balance}"
+    - "&b&lMayor: &e{mayor}"
+    - "&b&lOfficers: &e{officers}"
+    - "&b&lCitizens: &e{citizens}"
+    - "&b&lHome: &e{home}"
+
+  town-info-other:
+    - "&7&m----&r &e&l{town}&r &7&m----"
+    - "&b&lBalance: &e{balance}"
+    - "&b&lMayor: &e{mayor}"
+    - "&b&lOfficers: &e{officers}"
+    - "&b&lCitizens: &e{citizens}"
+
+  town-info-staff:
+    - "&7&m----&r &e&l{town}&r &7&m----"
+    - "&b&lBalance: &e{balance}"
+    - "&b&lMayor: &e{mayor}"
+    - "&b&lOfficers: &e{officers}"
+    - "&b&lCitizens: &e{citizens}"
+    - "&b&lHome: &e{home}"
+
+  help:
+    - "&7&m----&r &e&lVanilla Towns&r &7&m----"
+    - "&b/town [town] &f- &eSee the info of your town or a named town."
+    - "&b/town help &f- &eGet this help message."
+    - "&b/town create <name> &f- &eCrate a new town."
+    - "&b/town invite <player> &f- &eInvite a player to your town."
+    - "&b/town join &f- &eAccept an invite to join a town."
+    - "&b/town leave &f- &eLeave your town."
+    - "&b/town kick <player> &f- &eKick a player from your town."
+    - "&b/town rename <name> &f- &eRename your town."
+    - "&b/town give <player> &f- &eTransfer the mayor role to someone else."
+    - "&b/town delete &f- &eDelete your town."
+    - "&b/town balance &f- &eSee the balance of your town bank."
+    - "&b/town deposit <amount> &f- &eDeposit money to your town bank."
+    - "&b/town withdraw <amount> &f- &eWithdraw money from your town bank."
+    - "&b/town baltop &f- &eShow the top 10 towns."
+    - "&b/town sethome &f- &eSet the town home."
+    - "&b/town home &f- &eTeleport to the town home."
+    - "&b/town delhome &f- &eDelete the town home."
+    - "&b/town user setOfficer <player> &f- &eMake a member officer of your town"
+    - "&b/town user removeOfficer <player> &f- &eMake an officer of your town a regular member"
+    - "&b/town user deposit <player> allow &f- &eGrant the permission to deposit money"
+    - "&b/town user deposit <player> deny &f- &eRevoke the permission to deposit money"
+    - "&b/town user withdraw <player> allow &f- &eGrant the permission to withdraw money"
+    - "&b/town user withdraw <player> deny &f- &eRevoke the permission to withdraw money"
+    - "&b/townchat <message> &f- &eSend a message to all members of your town"
+    - "&b/townchat-toggle &f- &eToggle the town chat"
+
+  staff-help:
+    - "&7&m----&r &e&lVanilla Towns&r &7&m----"
+    - "&b/vanillatowns reload &f- &eReload the plugin."
+    - "&b/vanillatowns invite <player> <town> &f- &eInvite a player to join a town."
+    - "&b/vanillatowns join <player> <town> &f- &eAdd a player to a town."
+    - "&b/vanillatowns kick <player> <town> &f- &eKick a player from a town."
+    - "&b/vanillatowns rename <name> <town> &f- &eRename a town."
+    - "&b/vanillatowns delete <town> &f- &eDelete a town."
+    - "&b/vanillatowns setMayor <player> <town> &f- &ePromote a player to town mayor."
+    - "&b/vanillatowns setOfficer <player> <town> &f- &ePromote a player to town officer."
+    - "&b/vanillatowns setMember <player> <town> &f- &eDemote an officer to simple member."
+    - "&b/vanillatowns setHome <town> &f- &eSet the town home of a town."
+    - "&b/vanillatowns home <town> &f- &eTeleport to the town home of a town."
+    - "&b/vanillatowns delHome <town> &f- &eDelete the town home of a town."
+
+# Do not change this value. It is used to check if the config file is up to date.
+file-version: 1

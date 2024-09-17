@@ -1,0 +1,29 @@
+name: ${project.name}
+version: ${project.version}
+main: network.multicore.vt.VanillaTowns
+loader: network.multicore.vt.VanillaTownsLoader
+api-version: 1.21
+author: LoreScheffer
+description: VanillaTowns
+dependencies:
+  server:
+    Vault:
+      load: BEFORE
+      require: true
+    PlaceholderAPI:
+      load: BEFORE
+      require: false
+    Essentials:
+      load: BEFORE
+      require: false
+
+commands:
+  vanillatowns:
+    aliases: [ vt ]
+    description: Main plugin command
+  town:
+    aliases: [ towns ]
+    description: Town command
+  townchat:
+    aliases: [ tchat, tc ]
+    description: Town chat

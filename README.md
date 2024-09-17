@@ -10,14 +10,13 @@ Each town has a leader and can have one or more admins.
 The members of the towns have different permissions depending on their role in the town or depending on the leader
 choices.
 
-This plugin is highly configurable by changing its config file. PlaceholdersAPI and MVdWPlaceholderAPI are supported to
+This plugin is highly configurable by changing its config file. PlaceholdersAPI is supported to
 give you the ability to integrate it in other plugins.
 
 ### Permissions
 
 * `vanillatowns.player` Gives the ability to use all player town commands (Give this to the player for a regular use).
     * `vanillatowns.town` Gives access only to /town command.
-    * `vanillatowns.broadcast` Gives the ability to receive town creation/deletion broadcasts.
     * `vanillatowns.info` Gives the ability to see your town info.
     * `vanillatowns.info.other` Gives the ability to see other players' town info.
     * `vanillatowns.baltop` Gives the ability to see the 10 richest towns.
@@ -30,13 +29,12 @@ give you the ability to integrate it in other plugins.
     * `vanillatowns.home` Gives the ability to teleport to the town home.
     * `vanillatowns.home.edit` Gives the ability to set/delete the town home (Must be the leader or an admin).
     * `vanillatowns.balance` Gives the ability to see the balance of the town.
+    * `vanillatowns.balance.others` Gives the ability to see the balance of others' towns.
     * `vanillatowns.deposit` Gives the ability to deposit money to the town balance (Must be the leader or an admin or have the permission).
     * `vanillatowns.withdraw` Gives the ability to withdraw money from the town balance (Must be the leader or an admin or have the permission).
     * `vanillatowns.chat` Gives the ability to use the town chat.
-* `vanillatowns.chat` Gives the ability to send messages in the town chat.
 * `vanillatowns.staff` Gives the ability to manage the towns (This permission is meant for the staff, it inherits `vanillatowns.player` permissions).
     * `vanillatowns.staff.info` Gives the ability to see the town staff info.
-    * `vanillatowns.staff.reload` Gives the ability to reload the plugin.
     * `vanillatowns.staff.invite` Gives the ability to invite a player to a town.
     * `vanillatowns.staff.join` Gives the ability to add a player to a town.
     * `vanillatowns.staff.kick` Gives the ability to kick a player from a town.
@@ -46,6 +44,7 @@ give you the ability to integrate it in other plugins.
     * `vanillatowns.staff.home` Gives the ability to teleport to a town home.
     * `vanillatowns.staff.home.edit` Gives the ability to set/delete a town home.
     * `vanillatowns.staff.instanttp` Gives the ability to ignore teleport timer.
+* `vanillatowns.reload` Gives the ability to reload the plugin.
 
 ### Placeholders
 
@@ -57,23 +56,13 @@ This plugin support both PlaceholderAPI and MVdWPlaceholderAPI
 * `vanillatowns_town_balance`
 * `vanillatowns_town_role`
 * `vanillatowns_role_color`
-* `vanillatowns_town_home_w`
+* `vanillatowns_town_home_world`
 * `vanillatowns_town_home_x`
 * `vanillatowns_town_home_y`
 * `vanillatowns_town_home_z`
-* `vanillatowns_town_rank`
-
-#### MVdWPlaceholderAPI
-
-* `{vt_town_name}`
-* `{vt_town_balance}`
-* `{vt_town_role}`
-* `{vt_role_color}`
-* `{vt_town_home_w}`
-* `{vt_town_home_x}`
-* `{vt_town_home_y}`
-* `{vt_town_home_z}`
-* `{vt_town_rank}`
+* `vanillatowns_town_home_yaw`
+* `vanillatowns_town_home_pitch`
+* `vanillatowns_town_name_fancy`
 
 ### Configuration
 
