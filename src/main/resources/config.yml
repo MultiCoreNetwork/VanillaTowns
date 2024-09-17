@@ -160,12 +160,12 @@ messages:
   # Town deposit
   no-deposit-permission: "<red>You don't have the permission to deposit money to your town bank."
   deposit-failed: "<red>An error occurred while depositing the money."
-  deposit-success: "<yellow>{money}<aqua> deposited to your town bank."
+  deposit-success: "<yellow>{amount}<aqua> deposited to your town bank. Balance is now <yellow>{balance}"
 
   # Town withdraw
   no-withdraw-permission: "<red>You don't have the permission to withdraw money from your town bank."
   withdraw-failed: "<red>An error occurred while withdrawing the money."
-  withdraw-success: "<yellow>{money}<aqua> withdrawn from your town bank."
+  withdraw-success: "<yellow>{amount}<aqua> withdrawn from your town bank. Balance is now <yellow>{balance}"
 
   # Town baltop
   baltop-header: "<gray><st>------</st><yellow> Baltop <gray><st>------</st>"
